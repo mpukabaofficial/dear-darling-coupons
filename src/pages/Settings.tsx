@@ -9,6 +9,7 @@ import { Heart, Copy, Link2, UserX, Calendar, Moon, Sun } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useDarkMode } from "@/hooks/useDarkMode";
+import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 
 interface Profile {
   id: string;
@@ -31,6 +32,11 @@ const Settings = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { isDarkMode, toggleDarkMode } = useDarkMode();
+
+  // Keyboard shortcuts
+  useKeyboardShortcuts({
+    enableNavigation: true,
+  });
 
   useEffect(() => {
     fetchProfile();

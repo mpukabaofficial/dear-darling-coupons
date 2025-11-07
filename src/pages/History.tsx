@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,7 @@ import { ArrowLeft, Search, Heart, Calendar } from "lucide-react";
 import { format } from "date-fns";
 import ImageModal from "@/components/ImageModal";
 import { useToast } from "@/hooks/use-toast";
+import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 
 interface RedeemedCoupon {
   id: string;
@@ -37,6 +38,18 @@ const History = () => {
   } | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Keyboard shortcuts
+  useKeyboardShortcuts({
+    enableNavigation: true,
+    isModalOpen: selectedImage !== null,
+    onModalClose: () => setSelectedImage(null),
+    onSearchToggle: () => {
+      searchInputRef.current?.focus();
+      searchInputRef.current?.select();
+    },
+  });
 
   useEffect(() => {
     fetchHistory();
@@ -154,9 +167,10 @@ const History = () => {
         <div className="relative">
           <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground" />
           <Input
+            ref={searchInputRef}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Search memories..."
+            placeholder="Search memories... (Press / to focus)"
             className="pl-12 rounded-full h-12"
           />
         </div>

@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Upload, Sparkles } from "lucide-react";
 import ImagePreview from "@/components/ImagePreview";
 import { z } from "zod";
+import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 
 const couponSchema = z.object({
   title: z.string().trim().min(1, "Title is required").max(100, "Title must be less than 100 characters"),
@@ -47,6 +48,11 @@ const CreateCoupon = () => {
   const [errors, setErrors] = useState<{ title?: string; description?: string }>({});
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  // Keyboard shortcuts (disable navigation while typing)
+  useKeyboardShortcuts({
+    enableNavigation: true,
+  });
 
   useEffect(() => {
     checkAuth();
