@@ -141,9 +141,6 @@ const Home = () => {
     return [
       { label: 'Calendar Time', value: calendarString, sublabel: 'Together' },
       { label: 'Total Days', value: totalDays.toLocaleString(), sublabel: 'Days' },
-      { label: 'Years', value: years.toString(), sublabel: years === 1 ? 'Year' : 'Years' },
-      { label: 'Months (Remaining)', value: months.toString(), sublabel: months === 1 ? 'Month' : 'Months' },
-      { label: 'Days (Remaining)', value: days.toString(), sublabel: days === 1 ? 'Day' : 'Days' },
       { label: 'Anniversaries', value: years.toString(), sublabel: years === 1 ? 'Anniversary' : 'Anniversaries' },
       { label: 'Total Weeks', value: totalWeeks.toLocaleString(), sublabel: 'Weeks' },
       { label: 'Total Hours', value: totalHours.toLocaleString(), sublabel: 'Hours' },
