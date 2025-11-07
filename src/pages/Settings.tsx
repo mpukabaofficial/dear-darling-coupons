@@ -86,7 +86,7 @@ const Settings = () => {
   };
 
   const linkWithPartner = async () => {
-    const trimmedEmail = partnerEmail.trim().toLowerCase();
+    const trimmedEmail = partnerEmail.trim();
 
     if (!trimmedEmail) {
       toast({
@@ -108,61 +108,28 @@ const Settings = () => {
       return;
     }
 
-    if (trimmedEmail === profile?.email.toLowerCase()) {
-      toast({
-        title: "Error",
-        description: "You cannot link with yourself!",
-        variant: "destructive",
-      });
-      return;
-    }
-
     setIsLinking(true);
 
     try {
-      // Find partner by email
-      const { data: partnerData, error: findError } = await supabase
-        .from("profiles")
-        .select("id, email, partner_id")
-        .eq("email", trimmedEmail)
-        .single();
+      // Call the database function to link partners
+      const { data, error } = await supabase.rpc('link_partners', {
+        partner_email: trimmedEmail
+      });
 
-      if (findError || !partnerData) {
+      if (error) {
         toast({
           title: "Error",
-          description: "No user found with this email address",
+          description: error.message,
           variant: "destructive",
         });
         setIsLinking(false);
         return;
       }
 
-      // Check if partner is already linked to someone else
-      if (partnerData.partner_id && partnerData.partner_id !== profile?.id) {
+      if (!data?.success) {
         toast({
           title: "Error",
-          description: "This person is already linked with another partner",
-          variant: "destructive",
-        });
-        setIsLinking(false);
-        return;
-      }
-
-      // Link both profiles
-      const { error: updateError1 } = await supabase
-        .from("profiles")
-        .update({ partner_id: partnerData.id })
-        .eq("id", profile?.id);
-
-      const { error: updateError2 } = await supabase
-        .from("profiles")
-        .update({ partner_id: profile?.id })
-        .eq("id", partnerData.id);
-
-      if (updateError1 || updateError2) {
-        toast({
-          title: "Error",
-          description: "Failed to link with partner",
+          description: data?.error || "Failed to link with partner",
           variant: "destructive",
         });
         setIsLinking(false);
@@ -171,15 +138,15 @@ const Settings = () => {
 
       toast({
         title: "Success!",
-        description: `You are now linked with ${partnerData.email}`,
+        description: `You are now linked with ${trimmedEmail}`,
       });
 
       setPartnerEmail("");
       fetchProfile();
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Error",
-        description: "An unexpected error occurred",
+        description: error?.message || "An unexpected error occurred",
         variant: "destructive",
       });
     } finally {
@@ -197,21 +164,22 @@ const Settings = () => {
     if (!confirmed) return;
 
     try {
-      // Unlink both profiles
-      const { error: updateError1 } = await supabase
-        .from("profiles")
-        .update({ partner_id: null, relationship_start_date: null })
-        .eq("id", profile.id);
+      // Call the database function to unlink partners
+      const { data, error } = await supabase.rpc('unlink_partner');
 
-      const { error: updateError2 } = await supabase
-        .from("profiles")
-        .update({ partner_id: null, relationship_start_date: null })
-        .eq("id", profile.partner_id);
-
-      if (updateError1 || updateError2) {
+      if (error) {
         toast({
           title: "Error",
-          description: "Failed to unlink partner",
+          description: error.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (!data?.success) {
+        toast({
+          title: "Error",
+          description: data?.error || "Failed to unlink partner",
           variant: "destructive",
         });
         return;
@@ -223,10 +191,10 @@ const Settings = () => {
       });
 
       fetchProfile();
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Error",
-        description: "An unexpected error occurred",
+        description: error?.message || "An unexpected error occurred",
         variant: "destructive",
       });
     }
