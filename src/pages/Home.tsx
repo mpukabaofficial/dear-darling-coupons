@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Heart, LogOut, Calendar, Smile, Settings, List, Gift, ChevronLeft, ChevronRight } from "lucide-react";
+import { Heart, LogOut, Calendar, Smile, Settings, List, Gift, ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import CouponGrid from "@/components/CouponGrid";
 import MoodCheck from "@/components/MoodCheck";
@@ -81,38 +81,61 @@ const Home = () => {
   const getRelationshipStats = () => {
     if (!profile?.relationship_start_date) return null;
 
-    const start = new Date(profile.relationship_start_date);
-    const today = new Date();
+    // Parse the date at midnight UTC to avoid timezone issues
+    const startDate = new Date(profile.relationship_start_date + 'T00:00:00Z');
+    const todayDate = new Date();
+    todayDate.setHours(0, 0, 0, 0); // Set to midnight for consistent comparison
 
-    // Total time in milliseconds
-    const totalMs = today.getTime() - start.getTime();
-
-    // Calculate all time units
+    // Calculate total time differences
+    const totalMs = todayDate.getTime() - startDate.getTime();
     const totalSeconds = Math.floor(totalMs / 1000);
     const totalMinutes = Math.floor(totalSeconds / 60);
     const totalHours = Math.floor(totalMinutes / 60);
     const totalDays = Math.floor(totalHours / 24);
     const totalWeeks = Math.floor(totalDays / 7);
-    const totalMonths = Math.floor(totalDays / 30.44); // Average days per month
 
-    // Calculate years, months, days breakdown
-    let years = today.getFullYear() - start.getFullYear();
-    let months = today.getMonth() - start.getMonth();
-    let days = today.getDate() - start.getDate();
+    // Calculate years, months, days breakdown using proper date arithmetic
+    let years = 0;
+    let months = 0;
+    let days = 0;
 
-    // Adjust if days are negative
-    if (days < 0) {
-      months--;
-      // Get days in previous month
-      const prevMonth = new Date(today.getFullYear(), today.getMonth(), 0);
-      days += prevMonth.getDate();
+    // Create a working date starting from the start date
+    let workingDate = new Date(startDate);
+
+    // Calculate full years
+    while (true) {
+      const nextYear = new Date(workingDate);
+      nextYear.setUTCFullYear(nextYear.getUTCFullYear() + 1);
+
+      if (nextYear <= todayDate) {
+        years++;
+        workingDate = nextYear;
+      } else {
+        break;
+      }
     }
 
-    // Adjust if months are negative
-    if (months < 0) {
-      years--;
-      months += 12;
+    // Calculate remaining full months
+    while (true) {
+      const nextMonth = new Date(workingDate);
+      nextMonth.setUTCMonth(nextMonth.getUTCMonth() + 1);
+
+      if (nextMonth <= todayDate) {
+        months++;
+        workingDate = nextMonth;
+      } else {
+        break;
+      }
     }
+
+    // Calculate remaining days
+    days = Math.floor((todayDate.getTime() - workingDate.getTime()) / (1000 * 60 * 60 * 24));
+
+    // Calculate total months, years, decades, centuries
+    const totalMonths = years * 12 + months;
+    const totalYears = years;
+    const totalDecades = Math.floor(totalYears / 10);
+    const totalCenturies = Math.floor(totalYears / 100);
 
     // Create calendar string
     const parts = [];
@@ -122,16 +145,16 @@ const Home = () => {
     const calendarString = parts.join(', ');
 
     return [
-      { label: 'Calendar Time', value: calendarString, sublabel: 'Together' },
-      { label: 'Total Days', value: totalDays.toLocaleString(), sublabel: 'Days' },
-      { label: 'Years', value: years.toString(), sublabel: years === 1 ? 'Year' : 'Years' },
-      { label: 'Months (Remaining)', value: months.toString(), sublabel: months === 1 ? 'Month' : 'Months' },
-      { label: 'Days (Remaining)', value: days.toString(), sublabel: days === 1 ? 'Day' : 'Days' },
-      { label: 'Anniversaries', value: years.toString(), sublabel: years === 1 ? 'Anniversary' : 'Anniversaries' },
-      { label: 'Total Weeks', value: totalWeeks.toLocaleString(), sublabel: 'Weeks' },
-      { label: 'Total Hours', value: totalHours.toLocaleString(), sublabel: 'Hours' },
-      { label: 'Total Minutes', value: totalMinutes.toLocaleString(), sublabel: 'Minutes' },
       { label: 'Total Seconds', value: totalSeconds.toLocaleString(), sublabel: 'Seconds' },
+      { label: 'Total Minutes', value: totalMinutes.toLocaleString(), sublabel: 'Minutes' },
+      { label: 'Total Hours', value: totalHours.toLocaleString(), sublabel: 'Hours' },
+      { label: 'Total Days', value: totalDays.toLocaleString(), sublabel: 'Days' },
+      { label: 'Total Weeks', value: totalWeeks.toLocaleString(), sublabel: 'Weeks' },
+      { label: 'Total Months', value: totalMonths.toLocaleString(), sublabel: totalMonths === 1 ? 'Month' : 'Months' },
+      { label: 'Total Years', value: totalYears.toLocaleString(), sublabel: totalYears === 1 ? 'Year' : 'Years' },
+      { label: 'Total Decades', value: totalDecades.toLocaleString(), sublabel: totalDecades === 1 ? 'Decade' : 'Decades' },
+      { label: 'Total Centuries', value: totalCenturies.toLocaleString(), sublabel: totalCenturies === 1 ? 'Century' : 'Centuries' },
+      { label: 'Time Together', value: calendarString, sublabel: 'Total' },
     ];
   };
 
@@ -305,16 +328,17 @@ const Home = () => {
               <Button
                 variant="outline"
                 onClick={() => navigate("/manage-coupons")}
-                className="rounded-full flex items-center gap-2"
+                className="rounded-full flex items-center gap-2 md:px-4 px-3"
               >
                 <List className="w-4 h-4" />
-                Manage
+                <span className="hidden md:inline">Manage</span>
               </Button>
               <Button
                 onClick={() => navigate("/create-coupon")}
-                className="rounded-full shadow-soft"
+                className="rounded-full shadow-soft flex items-center gap-2 md:px-4 px-3"
               >
-                Create Coupon for Partner
+                <Plus className="w-4 h-4" />
+                <span className="hidden md:inline">Create Coupon for Partner</span>
               </Button>
             </div>
           </div>
