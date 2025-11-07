@@ -10,9 +10,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { Heart, Sparkles } from "lucide-react";
+import { Heart, Sparkles, Star } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useFavorites } from "@/hooks/useFavorites";
 import confetti from "canvas-confetti";
 
 interface Coupon {
@@ -36,6 +37,7 @@ const CouponCard = ({ coupon, onRedeemed }: CouponCardProps) => {
   const [reflection, setReflection] = useState("");
   const [redeeming, setRedeeming] = useState(false);
   const { toast } = useToast();
+  const { toggleFavorite, isFavorite } = useFavorites();
 
   const checkCanRedeem = async () => {
     const { data: { session } } = await supabase.auth.getSession();
@@ -199,6 +201,27 @@ const CouponCard = ({ coupon, onRedeemed }: CouponCardProps) => {
           )}
         </div>
 
+        {/* Star/Favorite Button - Top Left */}
+        <div className="absolute top-4 left-4">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleFavorite(coupon.id);
+            }}
+            className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white/30 transition-colors pointer-events-auto"
+            aria-label={isFavorite(coupon.id) ? "Remove from favorites" : "Add to favorites"}
+          >
+            <Star
+              className={`w-5 h-5 transition-all ${
+                isFavorite(coupon.id)
+                  ? "text-yellow-400 fill-yellow-400"
+                  : "text-white"
+              }`}
+            />
+          </button>
+        </div>
+
+        {/* Redeem Button - Top Right */}
         <div className="absolute top-4 right-4 flex gap-2">
           {!coupon.image_url && (
             <button

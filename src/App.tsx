@@ -9,6 +9,7 @@ import CreateCoupon from "./pages/CreateCoupon";
 import History from "./pages/History";
 import Settings from "./pages/Settings";
 import ManageCoupons from "./pages/ManageCoupons";
+import ActivityInsights from "./pages/ActivityInsights";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -27,6 +28,7 @@ const App = () => (
           <Route path="/history" element={<History />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/manage-coupons" element={<ManageCoupons />} />
+          <Route path="/activity-insights" element={<ActivityInsights />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
