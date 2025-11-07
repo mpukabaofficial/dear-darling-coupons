@@ -41,8 +41,35 @@ const CouponCard = ({ coupon, onRedeemed }: CouponCardProps) => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) return false;
 
+    // Check if user has created at least 4 coupons
+    const { data: createdCoupons, error: createdError } = await supabase
+      .from("coupons")
+      .select("id")
+      .eq("created_by", session.user.id);
+
+    if (createdError) {
+      toast({
+        title: "Error",
+        description: createdError.message,
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    const createdCount = createdCoupons?.length || 0;
+
+    if (createdCount < 4) {
+      toast({
+        title: "Not enough coupons given",
+        description: `You need to create at least 4 coupons before you can redeem any. You've created ${createdCount} so far. Create ${4 - createdCount} more! 💝`,
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    // Check daily redemption limit
     const today = new Date().toISOString().split('T')[0];
-    
+
     const { data, error } = await supabase
       .from("redeemed_coupons")
       .select("*")
