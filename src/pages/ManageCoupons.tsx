@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Heart, ArrowLeft, Trash2, Plus, Sparkles, Edit } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import ImageModal from "@/components/ImageModal";
+import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 
 interface Coupon {
   id: string;
@@ -32,6 +33,13 @@ const ManageCoupons = () => {
   } | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  // Keyboard shortcuts
+  useKeyboardShortcuts({
+    enableNavigation: true,
+    isModalOpen: selectedImage !== null,
+    onModalClose: () => setSelectedImage(null),
+  });
 
   useEffect(() => {
     checkUserAndFetchCoupons();

@@ -8,6 +8,7 @@ import CouponGrid from "@/components/CouponGrid";
 import MoodCheck from "@/components/MoodCheck";
 import RandomCouponPicker from "@/components/RandomCouponPicker";
 import { useNotifications } from "@/hooks/useNotifications";
+import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 
 interface Profile {
   id: string;
@@ -36,6 +37,13 @@ const Home = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { getUnredeemedCount } = useNotifications(profile?.id);
+
+  // Keyboard shortcuts
+  useKeyboardShortcuts({
+    enableNavigation: true,
+    isModalOpen: showRandomPicker,
+    onModalClose: () => setShowRandomPicker(false),
+  });
 
   useEffect(() => {
     checkUser();
