@@ -103,19 +103,19 @@ const Home = () => {
       <main className="max-w-7xl mx-auto px-4 py-8 space-y-8">
         {/* Partner Link Warning */}
         {!profile?.partner_id && (
-          <div className="bg-pink-50 border-2 border-pink-200 rounded-3xl p-6">
+          <div className="bg-gradient-to-br from-peach to-soft-pink rounded-3xl p-6 shadow-soft">
             <div className="flex items-start gap-4">
-              <Heart className="w-8 h-8 text-pink-500 mt-1" fill="currentColor" />
+              <Heart className="w-8 h-8 text-primary mt-1" fill="currentColor" />
               <div className="flex-1">
-                <h3 className="text-lg font-semibold text-pink-900 mb-2">
+                <h3 className="text-lg font-semibold mb-2">
                   Link with Your Partner
                 </h3>
-                <p className="text-sm text-pink-800 mb-4">
+                <p className="text-sm text-muted-foreground mb-4">
                   Connect with your partner to start creating and sharing love coupons together!
                 </p>
                 <Button
                   onClick={() => navigate("/settings")}
-                  className="bg-pink-500 hover:bg-pink-600"
+                  className="rounded-full shadow-soft"
                 >
                   Go to Settings
                 </Button>

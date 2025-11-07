@@ -11,7 +11,6 @@ import { Label } from "@/components/ui/label";
 interface Profile {
   id: string;
   email: string;
-  invite_code: string | null;
   partner_id: string | null;
   relationship_start_date: string | null;
 }
@@ -23,7 +22,7 @@ interface PartnerProfile {
 const Settings = () => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [partnerProfile, setPartnerProfile] = useState<PartnerProfile | null>(null);
-  const [partnerCode, setPartnerCode] = useState("");
+  const [partnerEmail, setPartnerEmail] = useState("");
   const [relationshipStartDate, setRelationshipStartDate] = useState("");
   const [isLinking, setIsLinking] = useState(false);
   const [isUpdatingDate, setIsUpdatingDate] = useState(false);
@@ -76,27 +75,40 @@ const Settings = () => {
     }
   };
 
-  const copyInviteCode = () => {
-    if (profile?.invite_code) {
-      navigator.clipboard.writeText(profile.invite_code);
+  const copyEmail = () => {
+    if (profile?.email) {
+      navigator.clipboard.writeText(profile.email);
       toast({
         title: "Copied!",
-        description: "Invite code copied to clipboard",
+        description: "Email copied to clipboard",
       });
     }
   };
 
   const linkWithPartner = async () => {
-    if (!partnerCode.trim()) {
+    const trimmedEmail = partnerEmail.trim().toLowerCase();
+
+    if (!trimmedEmail) {
       toast({
         title: "Error",
-        description: "Please enter a partner code",
+        description: "Please enter your partner's email",
         variant: "destructive",
       });
       return;
     }
 
-    if (partnerCode.toUpperCase() === profile?.invite_code) {
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(trimmedEmail)) {
+      toast({
+        title: "Error",
+        description: "Please enter a valid email address",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (trimmedEmail === profile?.email.toLowerCase()) {
       toast({
         title: "Error",
         description: "You cannot link with yourself!",
@@ -108,17 +120,17 @@ const Settings = () => {
     setIsLinking(true);
 
     try {
-      // Find partner by invite code
+      // Find partner by email
       const { data: partnerData, error: findError } = await supabase
         .from("profiles")
         .select("id, email, partner_id")
-        .eq("invite_code", partnerCode.toUpperCase())
+        .eq("email", trimmedEmail)
         .single();
 
       if (findError || !partnerData) {
         toast({
           title: "Error",
-          description: "Invalid partner code",
+          description: "No user found with this email address",
           variant: "destructive",
         });
         setIsLinking(false);
@@ -162,7 +174,7 @@ const Settings = () => {
         description: `You are now linked with ${partnerData.email}`,
       });
 
-      setPartnerCode("");
+      setPartnerEmail("");
       fetchProfile();
     } catch (error) {
       toast({
@@ -285,26 +297,26 @@ const Settings = () => {
             <Heart className="h-8 w-8 fill-pink-500 text-pink-500" />
             Settings
           </h1>
-          <Button variant="outline" onClick={() => navigate("/")}>
+          <Button variant="outline" onClick={() => navigate("/home")} className="rounded-full">
             Back to Home
           </Button>
         </div>
 
         {/* Partner Linking Section */}
-        <Card>
+        <Card className="rounded-3xl shadow-soft">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Link2 className="h-5 w-5" />
               Partner Connection
             </CardTitle>
             <CardDescription>
-              Link with your partner to start sharing love coupons
+              Link with your partner using their email address
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {/* Current Partner Status */}
             {profile.partner_id && partnerProfile ? (
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+              <div className="bg-green-50 border-2 border-green-200 rounded-3xl p-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-gray-600">Connected with</p>
@@ -314,7 +326,7 @@ const Settings = () => {
                     variant="destructive"
                     size="sm"
                     onClick={unlinkPartner}
-                    className="flex items-center gap-2"
+                    className="flex items-center gap-2 rounded-full"
                   >
                     <UserX className="h-4 w-4" />
                     Unlink
@@ -323,43 +335,43 @@ const Settings = () => {
               </div>
             ) : (
               <div className="space-y-4">
-                {/* Your Invite Code */}
+                {/* Your Email */}
                 <div>
-                  <Label htmlFor="invite-code">Your Invite Code</Label>
+                  <Label htmlFor="your-email">Your Email</Label>
                   <div className="flex gap-2 mt-1">
                     <Input
-                      id="invite-code"
-                      value={profile.invite_code || "Generating..."}
+                      id="your-email"
+                      value={profile.email}
                       readOnly
-                      className="font-mono text-lg font-bold"
+                      className="bg-gray-50 rounded-2xl h-12"
                     />
-                    <Button onClick={copyInviteCode} size="icon">
+                    <Button onClick={copyEmail} size="icon" variant="outline" className="rounded-full h-12 w-12">
                       <Copy className="h-4 w-4" />
                     </Button>
                   </div>
                   <p className="text-sm text-gray-500 mt-1">
-                    Share this code with your partner
+                    Share this email with your partner so they can link with you
                   </p>
                 </div>
 
                 {/* Link with Partner */}
                 <div>
-                  <Label htmlFor="partner-code">Partner's Invite Code</Label>
+                  <Label htmlFor="partner-email">Partner's Email Address</Label>
                   <div className="flex gap-2 mt-1">
                     <Input
-                      id="partner-code"
-                      value={partnerCode}
-                      onChange={(e) => setPartnerCode(e.target.value.toUpperCase())}
-                      placeholder="Enter partner's code"
-                      className="font-mono"
-                      maxLength={8}
+                      id="partner-email"
+                      type="email"
+                      value={partnerEmail}
+                      onChange={(e) => setPartnerEmail(e.target.value)}
+                      placeholder="partner@example.com"
+                      className="rounded-2xl h-12"
                     />
-                    <Button onClick={linkWithPartner} disabled={isLinking}>
+                    <Button onClick={linkWithPartner} disabled={isLinking} className="rounded-full h-12">
                       {isLinking ? "Linking..." : "Link"}
                     </Button>
                   </div>
                   <p className="text-sm text-gray-500 mt-1">
-                    Enter your partner's invite code to connect
+                    Enter your partner's email address to connect
                   </p>
                 </div>
               </div>
@@ -369,7 +381,7 @@ const Settings = () => {
 
         {/* Relationship Details */}
         {profile.partner_id && (
-          <Card>
+          <Card className="rounded-3xl shadow-soft">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Calendar className="h-5 w-5" />
@@ -388,10 +400,12 @@ const Settings = () => {
                     type="date"
                     value={relationshipStartDate}
                     onChange={(e) => setRelationshipStartDate(e.target.value)}
+                    className="rounded-2xl h-12"
                   />
                   <Button
                     onClick={updateRelationshipStartDate}
                     disabled={isUpdatingDate}
+                    className="rounded-full h-12"
                   >
                     {isUpdatingDate ? "Updating..." : "Update"}
                   </Button>
@@ -402,7 +416,7 @@ const Settings = () => {
         )}
 
         {/* Account Section */}
-        <Card>
+        <Card className="rounded-3xl shadow-soft">
           <CardHeader>
             <CardTitle>Account</CardTitle>
             <CardDescription>Manage your account settings</CardDescription>
@@ -410,9 +424,9 @@ const Settings = () => {
           <CardContent className="space-y-4">
             <div>
               <Label>Email</Label>
-              <Input value={profile.email} readOnly className="mt-1" />
+              <Input value={profile.email} readOnly className="mt-1 bg-gray-50 rounded-2xl h-12" />
             </div>
-            <Button variant="destructive" onClick={handleSignOut}>
+            <Button variant="destructive" onClick={handleSignOut} className="rounded-full">
               Sign Out
             </Button>
           </CardContent>
