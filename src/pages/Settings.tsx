@@ -5,8 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Heart, Copy, Link2, UserX, Calendar } from "lucide-react";
+import { Heart, Copy, Link2, UserX, Calendar, Moon, Sun } from "lucide-react";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { useDarkMode } from "@/hooks/useDarkMode";
 
 interface Profile {
   id: string;
@@ -28,6 +30,7 @@ const Settings = () => {
   const [isUpdatingDate, setIsUpdatingDate] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { isDarkMode, toggleDarkMode } = useDarkMode();
 
   useEffect(() => {
     fetchProfile();
@@ -405,6 +408,32 @@ const Settings = () => {
             </CardContent>
           </Card>
         )}
+
+        {/* Appearance Section */}
+        <Card className="rounded-3xl shadow-soft">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              {isDarkMode ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
+              Appearance
+            </CardTitle>
+            <CardDescription>Customize how the app looks</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <Label htmlFor="dark-mode" className="text-base font-medium">Dark Mode</Label>
+                <p className="text-sm text-muted-foreground">
+                  Switch between light and dark theme
+                </p>
+              </div>
+              <Switch
+                id="dark-mode"
+                checked={isDarkMode}
+                onCheckedChange={toggleDarkMode}
+              />
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Account Section */}
         <Card className="rounded-3xl shadow-soft">
