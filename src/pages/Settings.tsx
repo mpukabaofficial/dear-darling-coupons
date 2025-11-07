@@ -343,13 +343,13 @@ const Settings = () => {
                       id="your-email"
                       value={profile.email}
                       readOnly
-                      className="bg-gray-50 rounded-2xl h-12"
+                      className="bg-muted rounded-2xl h-12"
                     />
                     <Button onClick={copyEmail} size="icon" variant="outline" className="rounded-full h-12 w-12">
                       <Copy className="h-4 w-4" />
                     </Button>
                   </div>
-                  <p className="text-sm text-gray-500 mt-1">
+                  <p className="text-sm text-muted-foreground mt-1">
                     Share this email with your partner so they can link with you
                   </p>
                 </div>
@@ -370,7 +370,7 @@ const Settings = () => {
                       {isLinking ? "Linking..." : "Link"}
                     </Button>
                   </div>
-                  <p className="text-sm text-gray-500 mt-1">
+                  <p className="text-sm text-muted-foreground mt-1">
                     Enter your partner's email address to connect
                   </p>
                 </div>
@@ -450,7 +450,7 @@ const Settings = () => {
           <CardContent className="space-y-4">
             <div>
               <Label>Email</Label>
-              <Input value={profile.email} readOnly className="mt-1 bg-gray-50 rounded-2xl h-12" />
+              <Input value={profile?.email || ""} readOnly className="mt-1 bg-muted rounded-2xl h-12" />
             </div>
             <Button variant="destructive" onClick={handleSignOut} className="rounded-full">
               Sign Out
