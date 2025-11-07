@@ -132,10 +132,10 @@ const ManageCoupons = () => {
           </div>
           <Button
             onClick={() => navigate("/create-coupon")}
-            className="rounded-full shadow-soft flex items-center gap-2"
+            className="rounded-full shadow-soft flex items-center gap-2 md:px-4 px-3"
           >
             <Plus className="w-4 h-4" />
-            Create New
+            <span className="hidden md:inline">Create New</span>
           </Button>
         </div>
       </header>
