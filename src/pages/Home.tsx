@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Heart, LogOut, Calendar, Smile, Settings, List, Gift, ChevronLeft, ChevronRight, Plus, Shuffle, Star } from "lucide-react";
+import { Heart, LogOut, Calendar, Smile, Settings, List, Gift, ChevronLeft, ChevronRight, Plus, Shuffle, Star, TrendingUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import CouponGrid from "@/components/CouponGrid";
 import MoodCheck from "@/components/MoodCheck";
@@ -494,14 +494,22 @@ const Home = () => {
           {profile && <CouponGrid userId={profile.id} />}
         </div>
 
-        {/* History Link */}
-        <div className="text-center">
+        {/* History and Insights Links */}
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
           <Button
             variant="outline"
             onClick={() => navigate("/history")}
-            className="rounded-full"
+            className="rounded-full w-full sm:w-auto"
           >
             View Redeemed History
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => navigate("/activity-insights")}
+            className="rounded-full flex items-center gap-2 w-full sm:w-auto"
+          >
+            <TrendingUp className="w-4 h-4" />
+            Activity Insights
           </Button>
         </div>
       </main>
