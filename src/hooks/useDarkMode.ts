@@ -7,8 +7,8 @@ export const useDarkMode = () => {
     if (stored !== null) {
       return stored === 'true';
     }
-    // Fall back to system preference
-    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+    // Default to light mode
+    return false;
   });
 
   useEffect(() => {

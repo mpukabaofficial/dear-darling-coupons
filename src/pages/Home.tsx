@@ -390,7 +390,7 @@ const Home = () => {
       <main className="max-w-7xl mx-auto px-4 py-8 space-y-8">
         {/* Partner Link Warning */}
         {!profile?.partner_id && (
-          <div className="bg-gradient-to-br from-peach to-soft-pink rounded-3xl p-6 shadow-soft">
+          <div className="bg-gradient-to-br from-peach to-soft-pink rounded-3xl p-6 shadow-soft animate-slide-up animate-gradient">
             <div className="flex items-start gap-4">
               <Heart className="w-8 h-8 text-primary mt-1" fill="currentColor" />
               <div className="flex-1">
@@ -413,7 +413,7 @@ const Home = () => {
 
         {/* Unredeemed Coupons Alert */}
         {profile?.partner_id && unredeemedCount > 0 && (
-          <div className="bg-gradient-to-br from-lavender to-accent rounded-3xl p-6 shadow-soft animate-pulse-subtle">
+          <div className="bg-gradient-to-br from-lavender to-accent rounded-3xl p-6 shadow-soft animate-pulse-subtle animate-gradient animate-slide-up">
             <div className="flex items-start gap-4">
               <Gift className="w-8 h-8 text-primary mt-1" />
               <div className="flex-1">
@@ -431,10 +431,10 @@ const Home = () => {
 
         {/* Redemption Reminder */}
         {profile?.partner_id && showReminder && daysSinceLastRedemption !== null && (
-          <div className="bg-gradient-to-br from-accent to-soft-pink rounded-3xl p-6 shadow-soft relative">
+          <div className="bg-gradient-to-br from-accent to-soft-pink rounded-3xl p-6 shadow-soft relative animate-gradient animate-slide-up">
             <button
               onClick={dismissReminder}
-              className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 transition-colors flex items-center justify-center"
+              className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 transition-smooth flex items-center justify-center"
               aria-label="Dismiss reminder"
             >
               <X className="w-4 h-4 text-white" />
@@ -459,8 +459,8 @@ const Home = () => {
 
         {/* Coupon Counter Stats */}
         {profile?.partner_id && (
-          <div className="grid grid-cols-3 gap-4">
-            <div className="bg-gradient-to-br from-peach to-soft-pink p-6 rounded-3xl shadow-soft text-center">
+          <div className="grid grid-cols-3 gap-4 animate-slide-up">
+            <div className="bg-gradient-to-br from-peach to-soft-pink p-6 rounded-3xl shadow-soft text-center hover-lift animate-gradient stagger-1">
               <div className="flex items-center justify-center gap-2 mb-3">
                 <Gift className="w-5 h-5 text-primary" />
                 <p className="text-sm font-medium text-muted-foreground">Available</p>
@@ -471,7 +471,7 @@ const Home = () => {
               <p className="text-xs text-muted-foreground">Unredeemed</p>
             </div>
 
-            <div className="bg-gradient-to-br from-lavender to-accent p-6 rounded-3xl shadow-soft text-center">
+            <div className="bg-gradient-to-br from-lavender to-accent p-6 rounded-3xl shadow-soft text-center hover-lift animate-gradient stagger-2">
               <div className="flex items-center justify-center gap-2 mb-3">
                 <Heart className="w-5 h-5 text-primary" fill="currentColor" />
                 <p className="text-sm font-medium text-muted-foreground">Redeemed</p>
@@ -482,7 +482,7 @@ const Home = () => {
               <p className="text-xs text-muted-foreground">Enjoyed</p>
             </div>
 
-            <div className="bg-gradient-to-br from-soft-pink to-lavender p-6 rounded-3xl shadow-soft text-center">
+            <div className="bg-gradient-to-br from-soft-pink to-lavender p-6 rounded-3xl shadow-soft text-center hover-lift animate-gradient stagger-3">
               <div className="flex items-center justify-center gap-2 mb-3">
                 <Plus className="w-5 h-5 text-primary" />
                 <p className="text-sm font-medium text-muted-foreground">Created</p>
@@ -496,8 +496,8 @@ const Home = () => {
         )}
 
         {/* Shared Stats Section */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="bg-gradient-to-br from-peach to-soft-pink p-6 rounded-3xl shadow-soft relative">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-slide-up">
+          <div className="bg-gradient-to-br from-peach to-soft-pink p-6 rounded-3xl shadow-soft relative hover-lift animate-gradient">
             <div className="flex items-center gap-3 mb-2">
               <Calendar className="w-6 h-6 text-primary" />
               <h3 className="text-lg font-semibold">Days Together</h3>
@@ -539,7 +539,7 @@ const Home = () => {
             )}
           </div>
 
-          <div className="bg-gradient-to-br from-lavender to-accent p-6 rounded-3xl shadow-soft">
+          <div className="bg-gradient-to-br from-lavender to-accent p-6 rounded-3xl shadow-soft hover-lift animate-gradient">
             <div className="flex items-center gap-3 mb-3">
               <Smile className="w-6 h-6 text-primary" />
               <h3 className="text-lg font-semibold">Today's Vibe</h3>

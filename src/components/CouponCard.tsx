@@ -161,7 +161,7 @@ const CouponCard = ({ coupon, onRedeemed }: CouponCardProps) => {
 
   return (
     <>
-      <Card className="group relative aspect-[3/4] overflow-hidden rounded-3xl shadow-soft hover:shadow-glow transition-all border-2">
+      <Card className="group relative aspect-[3/4] overflow-hidden rounded-3xl shadow-soft hover:shadow-glow transition-all border-2 hover-lift animate-scale-in">
         <div
           className="w-full h-full cursor-pointer"
           onClick={handleRedeemClick}
@@ -170,10 +170,10 @@ const CouponCard = ({ coupon, onRedeemed }: CouponCardProps) => {
             <img
               src={coupon.image_url}
               alt={coupon.title}
-              className="w-full h-full object-cover blur-3xl"
+              className="w-full h-full object-cover blur-3xl transition-smooth"
             />
           ) : (
-            <div className="w-full h-full bg-gradient-to-br from-peach via-soft-pink to-lavender" />
+            <div className="w-full h-full bg-gradient-to-br from-peach via-soft-pink to-lavender animate-gradient-slow" />
           )}
         </div>
 
@@ -208,13 +208,13 @@ const CouponCard = ({ coupon, onRedeemed }: CouponCardProps) => {
               e.stopPropagation();
               toggleFavorite(coupon.id);
             }}
-            className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white/30 transition-colors pointer-events-auto"
+            className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white/30 transition-smooth pointer-events-auto hover:scale-110"
             aria-label={isFavorite(coupon.id) ? "Remove from favorites" : "Add to favorites"}
           >
             <Star
               className={`w-5 h-5 transition-all ${
                 isFavorite(coupon.id)
-                  ? "text-yellow-400 fill-yellow-400"
+                  ? "text-yellow-400 fill-yellow-400 animate-pulse"
                   : "text-white"
               }`}
             />
@@ -226,7 +226,7 @@ const CouponCard = ({ coupon, onRedeemed }: CouponCardProps) => {
           {!coupon.image_url && (
             <button
               onClick={handleRedeemClick}
-              className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white/30 transition-colors pointer-events-auto"
+              className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white/30 transition-smooth pointer-events-auto hover:scale-110 animate-glow"
             >
               <Heart className="w-5 h-5 text-white" fill="currentColor" />
             </button>
@@ -237,7 +237,7 @@ const CouponCard = ({ coupon, onRedeemed }: CouponCardProps) => {
                 e.stopPropagation();
                 handleRedeemClick();
               }}
-              className="px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full flex items-center gap-2 hover:bg-white/30 transition-colors pointer-events-auto"
+              className="px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full flex items-center gap-2 hover:bg-white/30 transition-smooth pointer-events-auto hover:scale-105"
             >
               <Heart className="w-4 h-4 text-white" fill="currentColor" />
               <span className="text-white text-sm font-medium">Redeem</span>
