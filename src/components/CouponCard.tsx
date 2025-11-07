@@ -15,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useFavorites } from "@/hooks/useFavorites";
 import confetti from "canvas-confetti";
+import ImageModal from "@/components/ImageModal";
 
 interface Coupon {
   id: string;
@@ -34,6 +35,7 @@ interface CouponCardProps {
 const CouponCard = ({ coupon, onRedeemed }: CouponCardProps) => {
   const [showConfirm, setShowConfirm] = useState(false);
   const [showReveal, setShowReveal] = useState(false);
+  const [showImageModal, setShowImageModal] = useState(false);
   const [reflection, setReflection] = useState("");
   const [redeeming, setRedeeming] = useState(false);
   const { toast } = useToast();
@@ -132,7 +134,7 @@ const CouponCard = ({ coupon, onRedeemed }: CouponCardProps) => {
     // Keep the coupon for history (don't delete it)
 
     setShowConfirm(false);
-    
+
     // Show confetti
     confetti({
       particleCount: 100,
@@ -143,6 +145,9 @@ const CouponCard = ({ coupon, onRedeemed }: CouponCardProps) => {
 
     if (coupon.is_surprise) {
       setShowReveal(true);
+    } else if (coupon.image_url) {
+      // For non-surprise coupons with images, show the image modal
+      setShowImageModal(true);
     } else {
       toast({
         title: "Coupon redeemed! 🎉",
@@ -336,6 +341,23 @@ const CouponCard = ({ coupon, onRedeemed }: CouponCardProps) => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Image Modal */}
+      {coupon.image_url && (
+        <ImageModal
+          open={showImageModal}
+          onOpenChange={(open) => {
+            setShowImageModal(open);
+            if (!open) {
+              onRedeemed();
+            }
+          }}
+          imageUrl={coupon.image_url}
+          title={coupon.title}
+          description={coupon.description || undefined}
+          blurLevel="none"
+        />
+      )}
     </>
   );
 };
