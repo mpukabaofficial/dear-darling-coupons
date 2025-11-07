@@ -81,38 +81,55 @@ const Home = () => {
   const getRelationshipStats = () => {
     if (!profile?.relationship_start_date) return null;
 
-    const start = new Date(profile.relationship_start_date);
-    const today = new Date();
+    // Parse the date at midnight UTC to avoid timezone issues
+    const startDate = new Date(profile.relationship_start_date + 'T00:00:00Z');
+    const todayDate = new Date();
+    todayDate.setHours(0, 0, 0, 0); // Set to midnight for consistent comparison
 
-    // Total time in milliseconds
-    const totalMs = today.getTime() - start.getTime();
-
-    // Calculate all time units
+    // Calculate total time differences
+    const totalMs = todayDate.getTime() - startDate.getTime();
     const totalSeconds = Math.floor(totalMs / 1000);
     const totalMinutes = Math.floor(totalSeconds / 60);
     const totalHours = Math.floor(totalMinutes / 60);
     const totalDays = Math.floor(totalHours / 24);
     const totalWeeks = Math.floor(totalDays / 7);
-    const totalMonths = Math.floor(totalDays / 30.44); // Average days per month
 
-    // Calculate years, months, days breakdown
-    let years = today.getFullYear() - start.getFullYear();
-    let months = today.getMonth() - start.getMonth();
-    let days = today.getDate() - start.getDate();
+    // Calculate years, months, days breakdown using proper date arithmetic
+    let years = 0;
+    let months = 0;
+    let days = 0;
 
-    // Adjust if days are negative
-    if (days < 0) {
-      months--;
-      // Get days in previous month
-      const prevMonth = new Date(today.getFullYear(), today.getMonth(), 0);
-      days += prevMonth.getDate();
+    // Create a working date starting from the start date
+    let workingDate = new Date(startDate);
+
+    // Calculate full years
+    while (true) {
+      const nextYear = new Date(workingDate);
+      nextYear.setUTCFullYear(nextYear.getUTCFullYear() + 1);
+
+      if (nextYear <= todayDate) {
+        years++;
+        workingDate = nextYear;
+      } else {
+        break;
+      }
     }
 
-    // Adjust if months are negative
-    if (months < 0) {
-      years--;
-      months += 12;
+    // Calculate remaining full months
+    while (true) {
+      const nextMonth = new Date(workingDate);
+      nextMonth.setUTCMonth(nextMonth.getUTCMonth() + 1);
+
+      if (nextMonth <= todayDate) {
+        months++;
+        workingDate = nextMonth;
+      } else {
+        break;
+      }
     }
+
+    // Calculate remaining days
+    days = Math.floor((todayDate.getTime() - workingDate.getTime()) / (1000 * 60 * 60 * 24));
 
     // Create calendar string
     const parts = [];
