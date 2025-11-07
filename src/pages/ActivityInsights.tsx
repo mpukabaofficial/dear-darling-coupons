@@ -178,8 +178,8 @@ const ActivityInsights = () => {
 
       <main className="max-w-4xl mx-auto px-4 py-8 space-y-6">
         {/* Summary Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card className="p-4 rounded-3xl bg-gradient-to-br from-peach to-soft-pink">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 animate-slide-up">
+          <Card className="p-4 rounded-3xl bg-gradient-to-br from-peach to-soft-pink hover-lift animate-gradient stagger-1">
             <div className="flex items-center gap-2 mb-2">
               <Heart className="w-4 h-4 text-primary" fill="currentColor" />
               <p className="text-xs font-medium text-muted-foreground">Total</p>
@@ -188,7 +188,7 @@ const ActivityInsights = () => {
             <p className="text-xs text-muted-foreground">Redeemed</p>
           </Card>
 
-          <Card className="p-4 rounded-3xl bg-gradient-to-br from-lavender to-accent">
+          <Card className="p-4 rounded-3xl bg-gradient-to-br from-lavender to-accent hover-lift animate-gradient stagger-2">
             <div className="flex items-center gap-2 mb-2">
               <Trophy className="w-4 h-4 text-primary" />
               <p className="text-xs font-medium text-muted-foreground">You</p>
@@ -197,7 +197,7 @@ const ActivityInsights = () => {
             <p className="text-xs text-muted-foreground">Redeemed</p>
           </Card>
 
-          <Card className="p-4 rounded-3xl bg-gradient-to-br from-soft-pink to-lavender">
+          <Card className="p-4 rounded-3xl bg-gradient-to-br from-soft-pink to-lavender hover-lift animate-gradient stagger-3">
             <div className="flex items-center gap-2 mb-2">
               <Heart className="w-4 h-4 text-primary" />
               <p className="text-xs font-medium text-muted-foreground">Partner</p>
@@ -206,7 +206,7 @@ const ActivityInsights = () => {
             <p className="text-xs text-muted-foreground">Redeemed</p>
           </Card>
 
-          <Card className="p-4 rounded-3xl bg-gradient-to-br from-accent to-peach">
+          <Card className="p-4 rounded-3xl bg-gradient-to-br from-accent to-peach hover-lift animate-gradient stagger-4">
             <div className="flex items-center gap-2 mb-2">
               <Flame className="w-4 h-4 text-orange-500" />
               <p className="text-xs font-medium text-muted-foreground">Streak</p>
@@ -217,7 +217,7 @@ const ActivityInsights = () => {
         </div>
 
         {/* Monthly Trend */}
-        <Card className="p-6 rounded-3xl shadow-soft">
+        <Card className="p-6 rounded-3xl shadow-soft hover-lift animate-slide-up">
           <div className="flex items-center gap-2 mb-4">
             <TrendingUp className="w-5 h-5 text-primary" />
             <h2 className="text-lg font-semibold">6-Month Trend</h2>
@@ -231,7 +231,7 @@ const ActivityInsights = () => {
                 </div>
                 <div className="w-full bg-muted rounded-full h-2">
                   <div
-                    className="bg-gradient-to-r from-primary to-accent h-2 rounded-full transition-all"
+                    className="bg-gradient-to-r from-primary to-accent h-2 rounded-full transition-smooth"
                     style={{ width: `${(stat.count / maxMonthly) * 100}%` }}
                   />
                 </div>
@@ -241,7 +241,7 @@ const ActivityInsights = () => {
         </Card>
 
         {/* Day of Week Analysis */}
-        <Card className="p-6 rounded-3xl shadow-soft">
+        <Card className="p-6 rounded-3xl shadow-soft hover-lift animate-slide-up">
           <div className="flex items-center gap-2 mb-4">
             <Calendar className="w-5 h-5 text-primary" />
             <h2 className="text-lg font-semibold">Most Popular Days</h2>
@@ -255,7 +255,7 @@ const ActivityInsights = () => {
                 </div>
                 <div className="w-full bg-muted rounded-full h-2">
                   <div
-                    className="bg-gradient-to-r from-lavender to-accent h-2 rounded-full transition-all"
+                    className="bg-gradient-to-r from-lavender to-accent h-2 rounded-full transition-smooth"
                     style={{ width: `${(stat.count / maxCount) * 100}%` }}
                   />
                 </div>
@@ -270,7 +270,7 @@ const ActivityInsights = () => {
         </Card>
 
         {/* Time of Day Analysis */}
-        <Card className="p-6 rounded-3xl shadow-soft">
+        <Card className="p-6 rounded-3xl shadow-soft hover-lift animate-slide-up">
           <div className="flex items-center gap-2 mb-4">
             <Clock className="w-5 h-5 text-primary" />
             <h2 className="text-lg font-semibold">Time Patterns</h2>
@@ -278,9 +278,9 @@ const ActivityInsights = () => {
           <div className="grid grid-cols-6 md:grid-cols-12 gap-2">
             {hourStats.map((stat) => (
               <div key={stat.hour} className="flex flex-col items-center gap-1">
-                <div className="w-full h-20 bg-muted rounded-lg flex items-end overflow-hidden">
+                <div className="w-full h-20 bg-muted rounded-lg flex items-end overflow-hidden hover:bg-muted/70 transition-smooth">
                   <div
-                    className="w-full bg-gradient-to-t from-primary to-accent rounded-t-lg transition-all"
+                    className="w-full bg-gradient-to-t from-primary to-accent rounded-t-lg transition-smooth"
                     style={{ height: `${(stat.count / maxHourly) * 100}%` }}
                   />
                 </div>
@@ -298,20 +298,20 @@ const ActivityInsights = () => {
         </Card>
 
         {/* Coupon Type Analysis */}
-        <Card className="p-6 rounded-3xl shadow-soft">
+        <Card className="p-6 rounded-3xl shadow-soft hover-lift animate-slide-up">
           <div className="flex items-center gap-2 mb-4">
             <Star className="w-5 h-5 text-primary" />
             <h2 className="text-lg font-semibold">Coupon Types</h2>
           </div>
           <div className="grid grid-cols-2 gap-4">
-            <div className="text-center p-4 bg-gradient-to-br from-peach to-soft-pink rounded-2xl">
+            <div className="text-center p-4 bg-gradient-to-br from-peach to-soft-pink rounded-2xl hover-lift animate-gradient">
               <p className="text-3xl font-bold text-primary">{regularCoupons}</p>
               <p className="text-sm text-muted-foreground mt-1">Regular Coupons</p>
               <p className="text-xs text-muted-foreground">
                 {totalRedemptions > 0 ? Math.round((regularCoupons / totalRedemptions) * 100) : 0}%
               </p>
             </div>
-            <div className="text-center p-4 bg-gradient-to-br from-lavender to-accent rounded-2xl">
+            <div className="text-center p-4 bg-gradient-to-br from-lavender to-accent rounded-2xl hover-lift animate-gradient">
               <p className="text-3xl font-bold text-primary">{surpriseCoupons}</p>
               <p className="text-sm text-muted-foreground mt-1">Surprise Coupons</p>
               <p className="text-xs text-muted-foreground">
@@ -323,7 +323,7 @@ const ActivityInsights = () => {
 
         {/* Fun Facts */}
         {totalRedemptions > 0 && (
-          <Card className="p-6 rounded-3xl shadow-soft bg-gradient-to-br from-peach via-soft-pink to-lavender">
+          <Card className="p-6 rounded-3xl shadow-soft bg-gradient-to-br from-peach via-soft-pink to-lavender hover-lift animate-gradient-slow animate-slide-up">
             <div className="flex items-center gap-2 mb-3">
               <Heart className="w-5 h-5 text-white" fill="currentColor" />
               <h2 className="text-lg font-semibold text-white">Fun Facts</h2>
