@@ -16,9 +16,10 @@ interface Coupon {
 
 interface CouponGridProps {
   userId: string;
+  onRedeemed?: () => void;
 }
 
-const CouponGrid = ({ userId }: CouponGridProps) => {
+const CouponGrid = ({ userId, onRedeemed }: CouponGridProps) => {
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
@@ -81,6 +82,7 @@ const CouponGrid = ({ userId }: CouponGridProps) => {
 
   const handleRedeemed = () => {
     fetchCoupons();
+    onRedeemed?.();
   };
 
   if (loading) {

@@ -11,6 +11,7 @@ import CouponCard from "@/components/CouponCard";
 import { useNotifications } from "@/hooks/useNotifications";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { useFavorites } from "@/hooks/useFavorites";
+import { AnimatedNumber } from "@/components/AnimatedNumber";
 
 interface Profile {
   id: string;
@@ -39,6 +40,11 @@ const Home = () => {
   const [showRandomPicker, setShowRandomPicker] = useState(false);
   const [availableCoupons, setAvailableCoupons] = useState<Coupon[]>([]);
   const [favoriteCoupons, setFavoriteCoupons] = useState<Coupon[]>([]);
+  const [couponStats, setCouponStats] = useState({
+    available: 0,
+    redeemed: 0,
+    totalCreated: 0,
+  });
   const navigate = useNavigate();
   const { toast } = useToast();
   const { getUnredeemedCount } = useNotifications(profile?.id);
@@ -84,6 +90,16 @@ const Home = () => {
     }
   }, [favorites, profile?.id]);
 
+  // Fetch coupon stats when profile changes
+  useEffect(() => {
+    if (profile?.id) {
+      fetchCouponStats();
+      // Refresh stats every 30 seconds
+      const interval = setInterval(fetchCouponStats, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [profile?.id]);
+
   const fetchUnredeemedCount = async () => {
     const count = await getUnredeemedCount();
     setUnredeemedCount(count);
@@ -123,6 +139,35 @@ const Home = () => {
     }
   };
 
+  const fetchCouponStats = async () => {
+    if (!profile?.id) return;
+
+    // Fetch available coupons (unredeemed coupons for user)
+    const { data: availableData } = await supabase
+      .from("coupons")
+      .select("id")
+      .eq("recipient_id", profile.id)
+      .is("redeemed_at", null);
+
+    // Fetch redeemed coupons (by user)
+    const { data: redeemedData } = await supabase
+      .from("redeemed_coupons")
+      .select("id")
+      .eq("redeemed_by", profile.id);
+
+    // Fetch total created coupons (by user)
+    const { data: createdData } = await supabase
+      .from("coupons")
+      .select("id")
+      .eq("created_by", profile.id);
+
+    setCouponStats({
+      available: availableData?.length || 0,
+      redeemed: redeemedData?.length || 0,
+      totalCreated: createdData?.length || 0,
+    });
+  };
+
   const handleRandomCouponRedeem = async (coupon: Coupon) => {
     const { error } = await supabase
       .from("coupons")
@@ -145,9 +190,10 @@ const Home = () => {
         : `You redeemed: ${coupon.title}`,
     });
 
-    // Refresh the coupons
+    // Refresh the coupons and stats
     fetchAvailableCoupons();
     fetchUnredeemedCount();
+    fetchCouponStats();
   };
 
   const handleSurpriseMeClick = () => {
@@ -380,6 +426,44 @@ const Home = () => {
           </div>
         )}
 
+        {/* Coupon Counter Stats */}
+        {profile?.partner_id && (
+          <div className="grid grid-cols-3 gap-4">
+            <div className="bg-gradient-to-br from-peach to-soft-pink p-6 rounded-3xl shadow-soft text-center">
+              <div className="flex items-center justify-center gap-2 mb-3">
+                <Gift className="w-5 h-5 text-primary" />
+                <p className="text-sm font-medium text-muted-foreground">Available</p>
+              </div>
+              <p className="text-4xl font-bold text-primary mb-1">
+                <AnimatedNumber value={couponStats.available} />
+              </p>
+              <p className="text-xs text-muted-foreground">Unredeemed</p>
+            </div>
+
+            <div className="bg-gradient-to-br from-lavender to-accent p-6 rounded-3xl shadow-soft text-center">
+              <div className="flex items-center justify-center gap-2 mb-3">
+                <Heart className="w-5 h-5 text-primary" fill="currentColor" />
+                <p className="text-sm font-medium text-muted-foreground">Redeemed</p>
+              </div>
+              <p className="text-4xl font-bold text-primary mb-1">
+                <AnimatedNumber value={couponStats.redeemed} />
+              </p>
+              <p className="text-xs text-muted-foreground">Enjoyed</p>
+            </div>
+
+            <div className="bg-gradient-to-br from-soft-pink to-lavender p-6 rounded-3xl shadow-soft text-center">
+              <div className="flex items-center justify-center gap-2 mb-3">
+                <Plus className="w-5 h-5 text-primary" />
+                <p className="text-sm font-medium text-muted-foreground">Created</p>
+              </div>
+              <p className="text-4xl font-bold text-primary mb-1">
+                <AnimatedNumber value={couponStats.totalCreated} />
+              </p>
+              <p className="text-xs text-muted-foreground">Total Given</p>
+            </div>
+          </div>
+        )}
+
         {/* Shared Stats Section */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="bg-gradient-to-br from-peach to-soft-pink p-6 rounded-3xl shadow-soft relative">
@@ -451,6 +535,7 @@ const Home = () => {
                   onRedeemed={() => {
                     fetchFavoriteCoupons();
                     fetchUnredeemedCount();
+                    fetchCouponStats();
                   }}
                 />
               ))}
@@ -491,7 +576,7 @@ const Home = () => {
             </div>
           </div>
 
-          {profile && <CouponGrid userId={profile.id} />}
+          {profile && <CouponGrid userId={profile.id} onRedeemed={fetchCouponStats} />}
         </div>
 
         {/* History and Insights Links */}
