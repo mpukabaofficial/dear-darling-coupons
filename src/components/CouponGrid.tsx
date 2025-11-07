@@ -1,0 +1,114 @@
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import CouponCard from "./CouponCard";
+import { useToast } from "@/hooks/use-toast";
+
+interface Coupon {
+  id: string;
+  title: string;
+  description: string | null;
+  image_url: string | null;
+  is_surprise: boolean;
+  created_by: string;
+  for_partner: string;
+}
+
+interface CouponGridProps {
+  userId: string;
+}
+
+const CouponGrid = ({ userId }: CouponGridProps) => {
+  const [coupons, setCoupons] = useState<Coupon[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    fetchCoupons();
+
+    // Subscribe to coupon changes
+    const channel = supabase
+      .channel('coupons-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'coupons',
+          filter: `for_partner=eq.${userId}`
+        },
+        () => {
+          fetchCoupons();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [userId]);
+
+  const fetchCoupons = async () => {
+    const { data, error } = await supabase
+      .from("coupons")
+      .select("*")
+      .eq("for_partner", userId)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      toast({
+        title: "Error loading coupons",
+        description: error.message,
+        variant: "destructive",
+      });
+    } else {
+      setCoupons(data || []);
+    }
+
+    setLoading(false);
+  };
+
+  const handleRedeemed = () => {
+    fetchCoupons();
+  };
+
+  if (loading) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {[1, 2, 3, 4].map((i) => (
+          <div
+            key={i}
+            className="aspect-[3/4] bg-muted rounded-3xl animate-pulse"
+          />
+        ))}
+      </div>
+    );
+  }
+
+  const activeCoupons = coupons.slice(0, 4);
+  const emptySlots = Math.max(0, 4 - activeCoupons.length);
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      {activeCoupons.map((coupon) => (
+        <CouponCard
+          key={coupon.id}
+          coupon={coupon}
+          onRedeemed={handleRedeemed}
+        />
+      ))}
+      
+      {Array.from({ length: emptySlots }).map((_, i) => (
+        <div
+          key={`empty-${i}`}
+          className="aspect-[3/4] border-2 border-dashed border-muted-foreground/30 rounded-3xl flex items-center justify-center text-muted-foreground"
+        >
+          <p className="text-center px-4">
+            Waiting for your<br />partner's love 💕
+          </p>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+export default CouponGrid;

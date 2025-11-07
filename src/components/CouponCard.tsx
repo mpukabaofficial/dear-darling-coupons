@@ -1,0 +1,270 @@
+import { useState } from "react";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Heart, Sparkles } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import confetti from "canvas-confetti";
+
+interface Coupon {
+  id: string;
+  title: string;
+  description: string | null;
+  image_url: string | null;
+  is_surprise: boolean;
+  created_by: string;
+  for_partner: string;
+}
+
+interface CouponCardProps {
+  coupon: Coupon;
+  onRedeemed: () => void;
+}
+
+const CouponCard = ({ coupon, onRedeemed }: CouponCardProps) => {
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [showReveal, setShowReveal] = useState(false);
+  const [reflection, setReflection] = useState("");
+  const [redeeming, setRedeeming] = useState(false);
+  const { toast } = useToast();
+
+  const checkCanRedeem = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return false;
+
+    const today = new Date().toISOString().split('T')[0];
+    
+    const { data, error } = await supabase
+      .from("redeemed_coupons")
+      .select("*")
+      .eq("redeemed_by", session.user.id)
+      .gte("redeemed_at", `${today}T00:00:00`)
+      .lte("redeemed_at", `${today}T23:59:59`);
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    if (data && data.length > 0) {
+      toast({
+        title: "Already redeemed today",
+        description: "You can only redeem one coupon per day. Come back tomorrow! 💕",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleRedeemClick = async () => {
+    const canRedeem = await checkCanRedeem();
+    if (canRedeem) {
+      setShowConfirm(true);
+    }
+  };
+
+  const handleConfirmRedeem = async () => {
+    setRedeeming(true);
+
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+
+    const { error } = await supabase.from("redeemed_coupons").insert({
+      coupon_id: coupon.id,
+      redeemed_by: session.user.id,
+      reflection_note: reflection || null,
+    });
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+      setRedeeming(false);
+      return;
+    }
+
+    // Delete the coupon after redemption
+    await supabase.from("coupons").delete().eq("id", coupon.id);
+
+    setShowConfirm(false);
+    
+    // Show confetti
+    confetti({
+      particleCount: 100,
+      spread: 70,
+      origin: { y: 0.6 },
+      colors: ['#F472B6', '#F9A8D4', '#DDD6FE', '#FDE047'],
+    });
+
+    if (coupon.is_surprise) {
+      setShowReveal(true);
+    } else {
+      toast({
+        title: "Coupon redeemed! 🎉",
+        description: "Enjoy your special treat!",
+      });
+      onRedeemed();
+    }
+
+    setRedeeming(false);
+  };
+
+  const handleRevealClose = () => {
+    setShowReveal(false);
+    onRedeemed();
+  };
+
+  return (
+    <>
+      <Card
+        className="group relative aspect-[3/4] overflow-hidden rounded-3xl shadow-soft hover:shadow-glow transition-all cursor-pointer border-2"
+        onClick={handleRedeemClick}
+      >
+        {coupon.image_url ? (
+          <img
+            src={coupon.image_url}
+            alt={coupon.title}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <div className="w-full h-full bg-gradient-to-br from-peach via-soft-pink to-lavender" />
+        )}
+
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent p-6 flex flex-col justify-end">
+          {coupon.is_surprise ? (
+            <div className="space-y-2 text-center">
+              <Sparkles className="w-8 h-8 text-white mx-auto animate-pulse" />
+              <p className="text-white font-bold text-lg">Surprise Coupon! 🎁</p>
+              <p className="text-white/80 text-sm">Tap to reveal</p>
+            </div>
+          ) : (
+            <>
+              <h3 className="text-white font-bold text-xl mb-2">{coupon.title}</h3>
+              {coupon.description && (
+                <p className="text-white/90 text-sm line-clamp-2">
+                  {coupon.description}
+                </p>
+              )}
+            </>
+          )}
+        </div>
+
+        <div className="absolute top-4 right-4">
+          <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
+            <Heart className="w-5 h-5 text-white" fill="currentColor" />
+          </div>
+        </div>
+      </Card>
+
+      {/* Confirmation Dialog */}
+      <Dialog open={showConfirm} onOpenChange={setShowConfirm}>
+        <DialogContent className="rounded-3xl">
+          <DialogHeader>
+            <DialogTitle>Redeem this coupon?</DialogTitle>
+            <DialogDescription>
+              Remember, you can only redeem one coupon per day!
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            {!coupon.is_surprise && (
+              <div className="space-y-2">
+                <h4 className="font-semibold">{coupon.title}</h4>
+                {coupon.description && (
+                  <p className="text-sm text-muted-foreground">{coupon.description}</p>
+                )}
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">
+                Add a reflection or memory (optional)
+              </label>
+              <Textarea
+                placeholder="Share your thoughts about this moment..."
+                value={reflection}
+                onChange={(e) => setReflection(e.target.value)}
+                className="rounded-2xl resize-none"
+                rows={3}
+              />
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowConfirm(false)}
+              disabled={redeeming}
+              className="rounded-full"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleConfirmRedeem}
+              disabled={redeeming}
+              className="rounded-full"
+            >
+              {redeeming ? "Redeeming..." : "Redeem Now"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Surprise Reveal Dialog */}
+      <Dialog open={showReveal} onOpenChange={handleRevealClose}>
+        <DialogContent className="rounded-3xl max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-center text-2xl">
+              Surprise! 🎉
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4 py-6 text-center">
+            {coupon.image_url && (
+              <img
+                src={coupon.image_url}
+                alt={coupon.title}
+                className="w-full rounded-2xl"
+              />
+            )}
+            <h3 className="text-2xl font-bold text-primary">{coupon.title}</h3>
+            {coupon.description && (
+              <p className="text-lg">{coupon.description}</p>
+            )}
+            <p className="text-sm text-muted-foreground">
+              Enjoy your special surprise from your partner! 💕
+            </p>
+          </div>
+
+          <DialogFooter>
+            <Button
+              onClick={handleRevealClose}
+              className="w-full rounded-full"
+            >
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+};
+
+export default CouponCard;
