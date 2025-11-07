@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import CouponCard from "./CouponCard";
+import { CouponGridSkeleton } from "./CouponSkeleton";
 import { useToast } from "@/hooks/use-toast";
 
 interface Coupon {
@@ -83,16 +84,7 @@ const CouponGrid = ({ userId }: CouponGridProps) => {
   };
 
   if (loading) {
-    return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {[1, 2, 3, 4].map((i) => (
-          <div
-            key={i}
-            className="aspect-[3/4] bg-muted rounded-3xl animate-pulse"
-          />
-        ))}
-      </div>
-    );
+    return <CouponGridSkeleton />;
   }
 
   const activeCoupons = coupons.slice(0, 4);
