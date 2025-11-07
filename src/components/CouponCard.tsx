@@ -14,6 +14,7 @@ import { Heart, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import confetti from "canvas-confetti";
+import ImageModal from "./ImageModal";
 
 interface Coupon {
   id: string;
@@ -33,6 +34,7 @@ interface CouponCardProps {
 const CouponCard = ({ coupon, onRedeemed }: CouponCardProps) => {
   const [showConfirm, setShowConfirm] = useState(false);
   const [showReveal, setShowReveal] = useState(false);
+  const [showImageModal, setShowImageModal] = useState(false);
   const [reflection, setReflection] = useState("");
   const [redeeming, setRedeeming] = useState(false);
   const { toast } = useToast();
@@ -41,8 +43,35 @@ const CouponCard = ({ coupon, onRedeemed }: CouponCardProps) => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) return false;
 
+    // Check if user has created at least 4 coupons
+    const { data: createdCoupons, error: createdError } = await supabase
+      .from("coupons")
+      .select("id")
+      .eq("created_by", session.user.id);
+
+    if (createdError) {
+      toast({
+        title: "Error",
+        description: createdError.message,
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    const createdCount = createdCoupons?.length || 0;
+
+    if (createdCount < 4) {
+      toast({
+        title: "Not enough coupons given",
+        description: `You need to create at least 4 coupons before you can redeem any. You've created ${createdCount} so far. Create ${4 - createdCount} more! 💝`,
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    // Check daily redemption limit
     const today = new Date().toISOString().split('T')[0];
-    
+
     const { data, error } = await supabase
       .from("redeemed_coupons")
       .select("*")
@@ -100,8 +129,7 @@ const CouponCard = ({ coupon, onRedeemed }: CouponCardProps) => {
       return;
     }
 
-    // Delete the coupon after redemption
-    await supabase.from("coupons").delete().eq("id", coupon.id);
+    // Keep the coupon for history (don't delete it)
 
     setShowConfirm(false);
     
@@ -133,26 +161,39 @@ const CouponCard = ({ coupon, onRedeemed }: CouponCardProps) => {
 
   return (
     <>
-      <Card
-        className="group relative aspect-[3/4] overflow-hidden rounded-3xl shadow-soft hover:shadow-glow transition-all cursor-pointer border-2"
-        onClick={handleRedeemClick}
-      >
-        {coupon.image_url ? (
-          <img
-            src={coupon.image_url}
-            alt={coupon.title}
-            className="w-full h-full object-cover"
-          />
-        ) : (
-          <div className="w-full h-full bg-gradient-to-br from-peach via-soft-pink to-lavender" />
-        )}
+      <Card className="group relative aspect-[3/4] overflow-hidden rounded-3xl shadow-soft hover:shadow-glow transition-all border-2">
+        <div
+          className="w-full h-full cursor-pointer"
+          onClick={(e) => {
+            // If clicking the image area and there's an image, show modal
+            if (coupon.image_url) {
+              setShowImageModal(true);
+            } else {
+              handleRedeemClick();
+            }
+          }}
+        >
+          {coupon.image_url ? (
+            <img
+              src={coupon.image_url}
+              alt={coupon.title}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-br from-peach via-soft-pink to-lavender" />
+          )}
+        </div>
 
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent p-6 flex flex-col justify-end">
+        <div
+          className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent p-6 flex flex-col justify-end pointer-events-none"
+        >
           {coupon.is_surprise ? (
             <div className="space-y-2 text-center">
               <Sparkles className="w-8 h-8 text-white mx-auto animate-pulse" />
               <p className="text-white font-bold text-lg">Surprise Coupon! 🎁</p>
-              <p className="text-white/80 text-sm">Tap to reveal</p>
+              <p className="text-white/80 text-sm">
+                {coupon.image_url ? "Tap to view • " : "Tap to reveal"}
+              </p>
             </div>
           ) : (
             <>
@@ -162,16 +203,48 @@ const CouponCard = ({ coupon, onRedeemed }: CouponCardProps) => {
                   {coupon.description}
                 </p>
               )}
+              {coupon.image_url && (
+                <p className="text-white/80 text-xs mt-2">Tap to view image</p>
+              )}
             </>
           )}
         </div>
 
-        <div className="absolute top-4 right-4">
-          <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
-            <Heart className="w-5 h-5 text-white" fill="currentColor" />
-          </div>
+        <div className="absolute top-4 right-4 flex gap-2">
+          {!coupon.image_url && (
+            <button
+              onClick={handleRedeemClick}
+              className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white/30 transition-colors pointer-events-auto"
+            >
+              <Heart className="w-5 h-5 text-white" fill="currentColor" />
+            </button>
+          )}
+          {coupon.image_url && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleRedeemClick();
+              }}
+              className="px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full flex items-center gap-2 hover:bg-white/30 transition-colors pointer-events-auto"
+            >
+              <Heart className="w-4 h-4 text-white" fill="currentColor" />
+              <span className="text-white text-sm font-medium">Redeem</span>
+            </button>
+          )}
         </div>
       </Card>
+
+      {/* Image Modal for unredeemed coupons */}
+      {coupon.image_url && (
+        <ImageModal
+          open={showImageModal}
+          onOpenChange={setShowImageModal}
+          imageUrl={coupon.image_url}
+          title={coupon.is_surprise ? "Surprise Coupon 🎁" : coupon.title}
+          blurLevel="harsh"
+          description={coupon.is_surprise ? "Redeem this coupon to reveal the full surprise!" : coupon.description || undefined}
+        />
+      )}
 
       {/* Confirmation Dialog */}
       <Dialog open={showConfirm} onOpenChange={setShowConfirm}>

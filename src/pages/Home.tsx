@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Heart, LogOut, Calendar, Smile, Settings } from "lucide-react";
+import { Heart, LogOut, Calendar, Smile, Settings, List } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import CouponGrid from "@/components/CouponGrid";
 import MoodCheck from "@/components/MoodCheck";
@@ -77,7 +77,20 @@ const Home = () => {
             <div className="w-10 h-10 bg-gradient-to-br from-primary to-accent rounded-full flex items-center justify-center">
               <Heart className="w-5 h-5 text-white" fill="currentColor" />
             </div>
-            <h1 className="text-xl font-bold">Love Coupons</h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-xl font-bold">Love Coupons</h1>
+              {profile?.partner_id && (
+                <div className="flex items-center gap-1 ml-2">
+                  <Heart className="w-4 h-4 text-primary animate-pulse" fill="currentColor" />
+                  <div className="flex items-center gap-0.5">
+                    <div className="w-1 h-1 bg-primary rounded-full animate-pulse"></div>
+                    <div className="w-1 h-1 bg-primary rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
+                    <div className="w-1 h-1 bg-primary rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
+                  </div>
+                  <Heart className="w-4 h-4 text-primary animate-pulse" fill="currentColor" style={{ animationDelay: '0.3s' }} />
+                </div>
+              )}
+            </div>
           </div>
           <div className="flex items-center gap-2">
             <Button
@@ -154,14 +167,24 @@ const Home = () => {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-2xl font-bold">Your Coupons</h2>
-            <Button
-              onClick={() => navigate("/create-coupon")}
-              className="rounded-full shadow-soft"
-            >
-              Create Coupon for Partner
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => navigate("/manage-coupons")}
+                className="rounded-full flex items-center gap-2"
+              >
+                <List className="w-4 h-4" />
+                Manage
+              </Button>
+              <Button
+                onClick={() => navigate("/create-coupon")}
+                className="rounded-full shadow-soft"
+              >
+                Create Coupon for Partner
+              </Button>
+            </div>
           </div>
-          
+
           {profile && <CouponGrid userId={profile.id} />}
         </div>
 

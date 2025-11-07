@@ -48,6 +48,15 @@ const CouponGrid = ({ userId }: CouponGridProps) => {
   }, [userId]);
 
   const fetchCoupons = async () => {
+    // First, get all redeemed coupon IDs for this user
+    const { data: redeemedData } = await supabase
+      .from("redeemed_coupons")
+      .select("coupon_id")
+      .eq("redeemed_by", userId);
+
+    const redeemedIds = redeemedData?.map(r => r.coupon_id) || [];
+
+    // Then fetch coupons that haven't been redeemed
     const { data, error } = await supabase
       .from("coupons")
       .select("*")
@@ -61,7 +70,9 @@ const CouponGrid = ({ userId }: CouponGridProps) => {
         variant: "destructive",
       });
     } else {
-      setCoupons(data || []);
+      // Filter out redeemed coupons client-side
+      const unredeemed = (data || []).filter(c => !redeemedIds.includes(c.id));
+      setCoupons(unredeemed);
     }
 
     setLoading(false);
