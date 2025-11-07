@@ -20,6 +20,16 @@ interface PartnerProfile {
   email: string;
 }
 
+// Generate a random 8-character invite code
+const generateInviteCode = (): string => {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let code = '';
+  for (let i = 0; i < 8; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return code;
+};
+
 const Settings = () => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [partnerProfile, setPartnerProfile] = useState<PartnerProfile | null>(null);
@@ -58,6 +68,34 @@ const Settings = () => {
     }
 
     if (profileData) {
+      // Auto-generate invite code if missing
+      if (!profileData.invite_code) {
+        let newCode = generateInviteCode();
+
+        // Try to save it (with retry if duplicate)
+        let saved = false;
+        let attempts = 0;
+
+        while (!saved && attempts < 5) {
+          const { error: updateError } = await supabase
+            .from("profiles")
+            .update({ invite_code: newCode })
+            .eq("id", profileData.id);
+
+          if (!updateError) {
+            profileData.invite_code = newCode;
+            saved = true;
+          } else if (updateError.message?.includes("duplicate") || updateError.message?.includes("unique")) {
+            // Code already exists, generate a new one
+            newCode = generateInviteCode();
+            attempts++;
+          } else {
+            // Other error, stop trying
+            break;
+          }
+        }
+      }
+
       setProfile(profileData);
       setRelationshipStartDate(profileData.relationship_start_date || "");
 
