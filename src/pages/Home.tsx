@@ -580,11 +580,11 @@ const Home = () => {
           <div className="flex items-center justify-between">
             <h2 className="text-2xl font-bold">Your Coupons</h2>
             <div className="flex gap-2">
-              {profile?.partner_id && unredeemedCount > 0 && (
+              {profile?.partner_id && (
                 <Button
                   variant="default"
                   onClick={handleSurpriseMeClick}
-                  className="rounded-full shadow-soft flex items-center gap-2 md:px-4 px-3 bg-gradient-to-r from-primary to-accent"
+                  className="rounded-full shadow-soft flex items-center gap-2 md:px-4 px-3 bg-gradient-to-r from-primary to-accent hover:scale-105 transition-smooth"
                 >
                   <Shuffle className="w-4 h-4" />
                   <span className="hidden md:inline">Surprise Me!</span>
