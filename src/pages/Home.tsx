@@ -131,6 +131,12 @@ const Home = () => {
     // Calculate remaining days
     days = Math.floor((todayDate.getTime() - workingDate.getTime()) / (1000 * 60 * 60 * 24));
 
+    // Calculate total months, years, decades, centuries
+    const totalMonths = years * 12 + months;
+    const totalYears = years;
+    const totalDecades = Math.floor(totalYears / 10);
+    const totalCenturies = Math.floor(totalYears / 100);
+
     // Create calendar string
     const parts = [];
     if (years > 0) parts.push(`${years} year${years !== 1 ? 's' : ''}`);
@@ -139,13 +145,16 @@ const Home = () => {
     const calendarString = parts.join(', ');
 
     return [
-      { label: 'Calendar Time', value: calendarString, sublabel: 'Together' },
-      { label: 'Total Days', value: totalDays.toLocaleString(), sublabel: 'Days' },
-      { label: 'Anniversaries', value: years.toString(), sublabel: years === 1 ? 'Anniversary' : 'Anniversaries' },
-      { label: 'Total Weeks', value: totalWeeks.toLocaleString(), sublabel: 'Weeks' },
-      { label: 'Total Hours', value: totalHours.toLocaleString(), sublabel: 'Hours' },
-      { label: 'Total Minutes', value: totalMinutes.toLocaleString(), sublabel: 'Minutes' },
       { label: 'Total Seconds', value: totalSeconds.toLocaleString(), sublabel: 'Seconds' },
+      { label: 'Total Minutes', value: totalMinutes.toLocaleString(), sublabel: 'Minutes' },
+      { label: 'Total Hours', value: totalHours.toLocaleString(), sublabel: 'Hours' },
+      { label: 'Total Days', value: totalDays.toLocaleString(), sublabel: 'Days' },
+      { label: 'Total Weeks', value: totalWeeks.toLocaleString(), sublabel: 'Weeks' },
+      { label: 'Total Months', value: totalMonths.toLocaleString(), sublabel: totalMonths === 1 ? 'Month' : 'Months' },
+      { label: 'Total Years', value: totalYears.toLocaleString(), sublabel: totalYears === 1 ? 'Year' : 'Years' },
+      { label: 'Total Decades', value: totalDecades.toLocaleString(), sublabel: totalDecades === 1 ? 'Decade' : 'Decades' },
+      { label: 'Total Centuries', value: totalCenturies.toLocaleString(), sublabel: totalCenturies === 1 ? 'Century' : 'Centuries' },
+      { label: 'Time Together', value: calendarString, sublabel: 'Total' },
     ];
   };
 
