@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Heart, ArrowLeft, Trash2, Plus, Sparkles, Edit } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import ImageModal from "@/components/ImageModal";
@@ -18,6 +19,22 @@ interface Coupon {
   created_at: string;
 }
 
+interface RedeemedCoupon {
+  id: string;
+  coupon_id: string;
+  redeemed_at: string;
+  redeemed_by: string;
+  reflection_note: string | null;
+  coupons: {
+    id: string;
+    title: string;
+    description: string | null;
+    image_url: string | null;
+    is_surprise: boolean;
+    created_at: string;
+  };
+}
+
 interface Profile {
   id: string;
   partner_id: string | null;
@@ -26,6 +43,7 @@ interface Profile {
 const ManageCoupons = () => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [createdCoupons, setCreatedCoupons] = useState<Coupon[]>([]);
+  const [redeemedCoupons, setRedeemedCoupons] = useState<RedeemedCoupon[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState<{
     url: string;
@@ -91,6 +109,31 @@ const ManageCoupons = () => {
 
       if (created) {
         setCreatedCoupons(created);
+      }
+
+      // Fetch redeemed coupons created by user
+      const { data: redeemed } = await supabase
+        .from("redeemed_coupons")
+        .select(`
+          id,
+          coupon_id,
+          redeemed_at,
+          redeemed_by,
+          reflection_note,
+          coupons:coupon_id (
+            id,
+            title,
+            description,
+            image_url,
+            is_surprise,
+            created_at
+          )
+        `)
+        .eq("coupons.created_by", session.user.id)
+        .order("redeemed_at", { ascending: false });
+
+      if (redeemed) {
+        setRedeemedCoupons(redeemed as RedeemedCoupon[]);
       }
     }
 
@@ -188,119 +231,209 @@ const ManageCoupons = () => {
         )}
 
         {/* Stats Card */}
-        <div className="bg-gradient-to-br from-lavender to-accent rounded-3xl p-6 shadow-soft">
-          <div className="text-center">
-            <p className="text-sm font-medium text-primary mb-2">
-              💝 Coupons Created
-            </p>
-            <p className="text-4xl font-bold text-primary mb-1">
-              {visibleCoupons.length}
-            </p>
-            <p className="text-sm text-muted-foreground">
-              {visibleCoupons.length < 4
-                ? `Create ${4 - visibleCoupons.length} more to unlock redemption`
-                : "You can redeem coupons from your partner! 🎉"}
-            </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="bg-gradient-to-br from-lavender to-accent rounded-3xl p-6 shadow-soft">
+            <div className="text-center">
+              <p className="text-sm font-medium text-primary mb-2">
+                💝 Active Coupons
+              </p>
+              <p className="text-4xl font-bold text-primary mb-1">
+                {visibleCoupons.length}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                {visibleCoupons.length < 4
+                  ? `Create ${4 - visibleCoupons.length} more to unlock redemption`
+                  : "You can redeem coupons from your partner! 🎉"}
+              </p>
+            </div>
+          </div>
+          <div className="bg-gradient-to-br from-peach to-soft-pink rounded-3xl p-6 shadow-soft">
+            <div className="text-center">
+              <p className="text-sm font-medium text-primary mb-2">
+                ✨ Redeemed Coupons
+              </p>
+              <p className="text-4xl font-bold text-primary mb-1">
+                {redeemedCoupons.length}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Coupons that have been enjoyed
+              </p>
+            </div>
           </div>
         </div>
 
-        {/* Coupons Grid */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold">Your Created Coupons</h2>
-          </div>
+        {/* Coupons Tabs */}
+        <Tabs defaultValue="active" className="space-y-4">
+          <TabsList className="grid w-full grid-cols-2 max-w-md mx-auto">
+            <TabsTrigger value="active">Active ({visibleCoupons.length})</TabsTrigger>
+            <TabsTrigger value="redeemed">Redeemed ({redeemedCoupons.length})</TabsTrigger>
+          </TabsList>
 
-          {visibleCoupons.length === 0 ? (
-            <div className="text-center py-12">
-              <Heart className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No coupons created yet</h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                Start creating love coupons for your partner!
-              </p>
-              <Button
-                onClick={() => navigate("/create-coupon")}
-                className="rounded-full shadow-soft"
-              >
-                Create Your First Coupon
-              </Button>
+          {/* Active Coupons Tab */}
+          <TabsContent value="active" className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-bold">Active Coupons</h2>
             </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {visibleCoupons.map((coupon) => (
-                <Card
-                  key={coupon.id}
-                  className="group relative aspect-[3/4] overflow-hidden rounded-3xl shadow-soft hover:shadow-glow transition-all border-2"
-                >
-                  <div
-                    className="w-full h-full cursor-pointer"
-                    onClick={() => {
-                      if (coupon.image_url) {
-                        setSelectedImage({
-                          url: coupon.image_url,
-                          title: coupon.title,
-                          description: coupon.description || undefined,
-                        });
-                      }
-                    }}
-                  >
-                    {coupon.image_url ? (
-                      <img
-                        src={coupon.image_url}
-                        alt={coupon.title}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-gradient-to-br from-peach via-soft-pink to-lavender" />
-                    )}
-                  </div>
 
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent p-6 flex flex-col justify-end pointer-events-none">
-                    {coupon.is_surprise && (
+            {visibleCoupons.length === 0 ? (
+              <div className="text-center py-12">
+                <Heart className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-semibold mb-2">No active coupons</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Start creating love coupons for your partner!
+                </p>
+                <Button
+                  onClick={() => navigate("/create-coupon")}
+                  className="rounded-full shadow-soft"
+                >
+                  Create Your First Coupon
+                </Button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {visibleCoupons.map((coupon) => (
+                  <Card
+                    key={coupon.id}
+                    className="group relative aspect-[3/4] overflow-hidden rounded-3xl shadow-soft hover:shadow-glow transition-all border-2"
+                  >
+                    <div
+                      className="w-full h-full cursor-pointer"
+                      onClick={() => {
+                        if (coupon.image_url) {
+                          setSelectedImage({
+                            url: coupon.image_url,
+                            title: coupon.title,
+                            description: coupon.description || undefined,
+                          });
+                        }
+                      }}
+                    >
+                      {coupon.image_url ? (
+                        <img
+                          src={coupon.image_url}
+                          alt={coupon.title}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-peach via-soft-pink to-lavender" />
+                      )}
+                    </div>
+
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent p-6 flex flex-col justify-end pointer-events-none">
+                      {coupon.is_surprise && (
+                        <div className="mb-2 flex justify-center">
+                          <div className="flex items-center gap-1 bg-primary/20 backdrop-blur-sm px-3 py-1 rounded-full">
+                            <Sparkles className="w-4 h-4 text-white" />
+                            <span className="text-white text-xs font-medium">Surprise</span>
+                          </div>
+                        </div>
+                      )}
+                      <h3 className="text-white font-bold text-xl mb-2">{coupon.title}</h3>
+                      {coupon.description && (
+                        <p className="text-white/90 text-sm line-clamp-2">
+                          {coupon.description}
+                        </p>
+                      )}
+                      {coupon.image_url && (
+                        <p className="text-white/80 text-xs mt-2">Tap to view image</p>
+                      )}
+                    </div>
+
+                    <div className="absolute top-4 right-4 flex gap-2 pointer-events-auto">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/create-coupon?edit=${coupon.id}`);
+                        }}
+                        className="w-10 h-10 bg-blue-500/90 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-blue-600/90 transition-colors"
+                        title="Edit coupon"
+                      >
+                        <Edit className="w-5 h-5 text-white" />
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deleteCoupon(coupon.id);
+                        }}
+                        className="w-10 h-10 bg-rose-500/90 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-rose-600/90 transition-colors"
+                        title="Delete coupon"
+                      >
+                        <Trash2 className="w-5 h-5 text-white" />
+                      </button>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+
+          {/* Redeemed Coupons Tab */}
+          <TabsContent value="redeemed" className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-bold">Redeemed Coupons</h2>
+            </div>
+
+            {redeemedCoupons.length === 0 ? (
+              <div className="text-center py-12">
+                <Heart className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-semibold mb-2">No redeemed coupons yet</h3>
+                <p className="text-sm text-muted-foreground">
+                  Coupons that your partner redeems will appear here
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {redeemedCoupons.map((redeemed) => (
+                  <Card
+                    key={redeemed.id}
+                    className="group relative aspect-[3/4] overflow-hidden rounded-3xl shadow-soft hover:shadow-glow transition-all border-2"
+                  >
+                    <div
+                      className="w-full h-full cursor-pointer"
+                      onClick={() => {
+                        if (redeemed.coupons.image_url) {
+                          setSelectedImage({
+                            url: redeemed.coupons.image_url,
+                            title: redeemed.coupons.title,
+                            description: redeemed.coupons.description || undefined,
+                          });
+                        }
+                      }}
+                    >
+                      {redeemed.coupons.image_url ? (
+                        <img
+                          src={redeemed.coupons.image_url}
+                          alt={redeemed.coupons.title}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-peach via-soft-pink to-lavender" />
+                      )}
+                    </div>
+
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent p-6 flex flex-col justify-end pointer-events-none">
                       <div className="mb-2 flex justify-center">
-                        <div className="flex items-center gap-1 bg-primary/20 backdrop-blur-sm px-3 py-1 rounded-full">
-                          <Sparkles className="w-4 h-4 text-white" />
-                          <span className="text-white text-xs font-medium">Surprise</span>
+                        <div className="flex items-center gap-1 bg-green-500/20 backdrop-blur-sm px-3 py-1 rounded-full">
+                          <Heart className="w-4 h-4 text-white" fill="currentColor" />
+                          <span className="text-white text-xs font-medium">Redeemed</span>
                         </div>
                       </div>
-                    )}
-                    <h3 className="text-white font-bold text-xl mb-2">{coupon.title}</h3>
-                    {coupon.description && (
-                      <p className="text-white/90 text-sm line-clamp-2">
-                        {coupon.description}
+                      <h3 className="text-white font-bold text-xl mb-2">{redeemed.coupons.title}</h3>
+                      {redeemed.coupons.description && (
+                        <p className="text-white/90 text-sm line-clamp-2">
+                          {redeemed.coupons.description}
+                        </p>
+                      )}
+                      <p className="text-white/80 text-xs mt-2">
+                        Redeemed {new Date(redeemed.redeemed_at).toLocaleDateString()}
                       </p>
-                    )}
-                    {coupon.image_url && (
-                      <p className="text-white/80 text-xs mt-2">Tap to view image</p>
-                    )}
-                  </div>
-
-                  <div className="absolute top-4 right-4 flex gap-2 pointer-events-auto">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigate(`/create-coupon?edit=${coupon.id}`);
-                      }}
-                      className="w-10 h-10 bg-blue-500/90 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-blue-600/90 transition-colors"
-                      title="Edit coupon"
-                    >
-                      <Edit className="w-5 h-5 text-white" />
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        deleteCoupon(coupon.id);
-                      }}
-                      className="w-10 h-10 bg-rose-500/90 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-rose-600/90 transition-colors"
-                      title="Delete coupon"
-                    >
-                      <Trash2 className="w-5 h-5 text-white" />
-                    </button>
-                  </div>
-                </Card>
-              ))}
-            </div>
-          )}
-        </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
       </main>
 
       {/* Image Modal */}

@@ -45,7 +45,7 @@ const CouponCard = ({ coupon, onRedeemed }: CouponCardProps) => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) return false;
 
-    // Check if user has created at least 4 coupons
+    // Check if user has created at least 4 unredeemed coupons
     const { data: createdCoupons, error: createdError } = await supabase
       .from("coupons")
       .select("id")
@@ -60,7 +60,15 @@ const CouponCard = ({ coupon, onRedeemed }: CouponCardProps) => {
       return false;
     }
 
-    const createdCount = createdCoupons?.length || 0;
+    // Get redeemed coupon IDs
+    const { data: redeemedCoupons } = await supabase
+      .from("redeemed_coupons")
+      .select("coupon_id");
+
+    const redeemedIds = new Set(redeemedCoupons?.map(r => r.coupon_id) || []);
+
+    // Count only unredeemed coupons created by user
+    const createdCount = createdCoupons?.filter(c => !redeemedIds.has(c.id)).length || 0;
 
     if (createdCount < 4) {
       toast({
