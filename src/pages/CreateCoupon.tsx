@@ -343,9 +343,19 @@ const CreateCoupon = () => {
           </div>
 
           {!profile?.partner_id && (
-            <p className="text-sm text-destructive text-center">
-              You need to link with your partner before creating coupons
-            </p>
+            <div className="text-center space-y-2">
+              <p className="text-sm text-destructive">
+                You need to link with your partner before creating coupons
+              </p>
+              <Button
+                type="button"
+                variant="link"
+                onClick={() => navigate("/settings")}
+                className="text-sm"
+              >
+                Go to Settings to link with partner →
+              </Button>
+            </div>
           )}
         </form>
       </main>

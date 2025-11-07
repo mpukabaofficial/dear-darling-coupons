@@ -99,6 +99,7 @@ export type Database = {
           created_at: string | null
           email: string
           id: string
+          invite_code: string | null
           partner_id: string | null
           relationship_start_date: string | null
         }
@@ -106,6 +107,7 @@ export type Database = {
           created_at?: string | null
           email: string
           id: string
+          invite_code?: string | null
           partner_id?: string | null
           relationship_start_date?: string | null
         }
@@ -113,6 +115,7 @@ export type Database = {
           created_at?: string | null
           email?: string
           id?: string
+          invite_code?: string | null
           partner_id?: string | null
           relationship_start_date?: string | null
         }
