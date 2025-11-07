@@ -8,11 +8,13 @@ import CouponGrid from "@/components/CouponGrid";
 import MoodCheck from "@/components/MoodCheck";
 import RandomCouponPicker from "@/components/RandomCouponPicker";
 import CouponCard from "@/components/CouponCard";
+import ImageModal from "@/components/ImageModal";
 import { useNotifications } from "@/hooks/useNotifications";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { useFavorites } from "@/hooks/useFavorites";
 import { AnimatedNumber } from "@/components/AnimatedNumber";
 import { useRedemptionReminder } from "@/hooks/useRedemptionReminder";
+import confetti from "canvas-confetti";
 
 interface Profile {
   id: string;
@@ -41,6 +43,7 @@ const Home = () => {
   const [showRandomPicker, setShowRandomPicker] = useState(false);
   const [availableCoupons, setAvailableCoupons] = useState<Coupon[]>([]);
   const [favoriteCoupons, setFavoriteCoupons] = useState<Coupon[]>([]);
+  const [redeemedCoupon, setRedeemedCoupon] = useState<Coupon | null>(null);
   const [couponStats, setCouponStats] = useState({
     available: 0,
     redeemed: 0,
@@ -171,26 +174,99 @@ const Home = () => {
   };
 
   const handleRandomCouponRedeem = async (coupon: Coupon) => {
-    const { error } = await supabase
-      .from("coupons")
-      .update({ redeemed_at: new Date().toISOString() })
-      .eq("id", coupon.id);
+    // Check if user can redeem (same validation as CouponCard)
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
 
-    if (error) {
+    // Check if user has created at least 4 coupons
+    const { data: createdCoupons, error: createdError } = await supabase
+      .from("coupons")
+      .select("id")
+      .eq("created_by", session.user.id);
+
+    if (createdError) {
       toast({
         title: "Error",
-        description: "Failed to redeem coupon",
+        description: createdError.message,
         variant: "destructive",
       });
       return;
     }
 
-    toast({
-      title: "Coupon Redeemed! 🎉",
-      description: coupon.is_surprise
-        ? "Your surprise has been revealed!"
-        : `You redeemed: ${coupon.title}`,
+    const createdCount = createdCoupons?.length || 0;
+
+    if (createdCount < 4) {
+      toast({
+        title: "Not enough coupons given",
+        description: `You need to create at least 4 coupons before you can redeem any. You've created ${createdCount} so far. Create ${4 - createdCount} more! 💝`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Check daily redemption limit
+    const today = new Date().toISOString().split('T')[0];
+
+    const { data, error } = await supabase
+      .from("redeemed_coupons")
+      .select("*")
+      .eq("redeemed_by", session.user.id)
+      .gte("redeemed_at", `${today}T00:00:00`)
+      .lte("redeemed_at", `${today}T23:59:59`);
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (data && data.length > 0) {
+      toast({
+        title: "Already redeemed today",
+        description: "You can only redeem one coupon per day. Come back tomorrow! 💕",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Insert into redeemed_coupons table
+    const { error: redeemError } = await supabase.from("redeemed_coupons").insert({
+      coupon_id: coupon.id,
+      redeemed_by: session.user.id,
+      reflection_note: null,
     });
+
+    if (redeemError) {
+      toast({
+        title: "Error",
+        description: redeemError.message,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Show confetti
+    confetti({
+      particleCount: 100,
+      spread: 70,
+      origin: { y: 0.6 },
+      colors: ['#F472B6', '#F9A8D4', '#DDD6FE', '#FDE047'],
+    });
+
+    // For non-surprise coupons with images, show the image modal
+    if (!coupon.is_surprise && coupon.image_url) {
+      setRedeemedCoupon(coupon);
+    } else {
+      toast({
+        title: "Coupon Redeemed! 🎉",
+        description: coupon.is_surprise
+          ? "Your surprise has been revealed!"
+          : `You redeemed: ${coupon.title}`,
+      });
+    }
 
     // Refresh the coupons and stats
     fetchAvailableCoupons();
@@ -641,6 +717,22 @@ const Home = () => {
         coupons={availableCoupons}
         onRedeem={handleRandomCouponRedeem}
       />
+
+      {/* Image Modal for Redeemed Coupons */}
+      {redeemedCoupon?.image_url && (
+        <ImageModal
+          open={!!redeemedCoupon}
+          onOpenChange={(open) => {
+            if (!open) {
+              setRedeemedCoupon(null);
+            }
+          }}
+          imageUrl={redeemedCoupon.image_url}
+          title={redeemedCoupon.title}
+          description={redeemedCoupon.description || undefined}
+          blurLevel="none"
+        />
+      )}
     </div>
   );
 };
