@@ -230,20 +230,19 @@ const ManageCoupons = () => {
                   </div>
 
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent p-6 flex flex-col justify-end pointer-events-none">
-                    {coupon.is_surprise ? (
-                      <div className="space-y-2 text-center">
-                        <Sparkles className="w-8 h-8 text-white mx-auto animate-pulse" />
-                        <p className="text-white font-bold text-lg">Surprise Coupon! 🎁</p>
+                    {coupon.is_surprise && (
+                      <div className="mb-2 flex justify-center">
+                        <div className="flex items-center gap-1 bg-primary/20 backdrop-blur-sm px-3 py-1 rounded-full">
+                          <Sparkles className="w-4 h-4 text-white" />
+                          <span className="text-white text-xs font-medium">Surprise</span>
+                        </div>
                       </div>
-                    ) : (
-                      <>
-                        <h3 className="text-white font-bold text-xl mb-2">{coupon.title}</h3>
-                        {coupon.description && (
-                          <p className="text-white/90 text-sm line-clamp-2">
-                            {coupon.description}
-                          </p>
-                        )}
-                      </>
+                    )}
+                    <h3 className="text-white font-bold text-xl mb-2">{coupon.title}</h3>
+                    {coupon.description && (
+                      <p className="text-white/90 text-sm line-clamp-2">
+                        {coupon.description}
+                      </p>
                     )}
                     {coupon.image_url && (
                       <p className="text-white/80 text-xs mt-2">Tap to view image</p>
