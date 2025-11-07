@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { ArrowLeft, Search, Heart, Calendar } from "lucide-react";
 import { format } from "date-fns";
+import ImageModal from "@/components/ImageModal";
+import { useToast } from "@/hooks/use-toast";
 
 interface RedeemedCoupon {
   id: string;
@@ -24,7 +26,14 @@ const History = () => {
   const [filteredCoupons, setFilteredCoupons] = useState<RedeemedCoupon[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
+  const [selectedImage, setSelectedImage] = useState<{
+    url: string;
+    title: string;
+    description?: string;
+    blurLevel: "harsh" | "mild" | "none";
+  } | null>(null);
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   useEffect(() => {
     fetchHistory();
@@ -77,6 +86,32 @@ const History = () => {
     }
 
     setLoading(false);
+  };
+
+  const handleImageClick = (item: RedeemedCoupon) => {
+    if (!item.coupon.image_url) return;
+
+    // Check if within 12-hour viewing window
+    const redeemedTime = new Date(item.redeemed_at).getTime();
+    const now = new Date().getTime();
+    const hoursSinceRedemption = (now - redeemedTime) / (1000 * 60 * 60);
+
+    if (hoursSinceRedemption <= 12) {
+      // Within 12 hours - show with mild blur
+      setSelectedImage({
+        url: item.coupon.image_url,
+        title: item.coupon.title,
+        description: item.coupon.description || undefined,
+        blurLevel: "mild",
+      });
+    } else {
+      // Outside 12-hour window
+      toast({
+        title: "Viewing window closed",
+        description: "This image can only be viewed within 12 hours of redemption. The magic has faded... 💫",
+        variant: "destructive",
+      });
+    }
   };
 
   if (loading) {
@@ -149,52 +184,94 @@ const History = () => {
           </div>
         ) : (
           <div className="space-y-4">
-            {filteredCoupons.map((item) => (
-              <Card key={item.id} className="p-6 rounded-3xl hover:shadow-soft transition-all">
-                <div className="flex gap-4">
-                  {item.coupon.image_url && (
-                    <img
-                      src={item.coupon.image_url}
-                      alt={item.coupon.title}
-                      className="w-24 h-24 object-cover rounded-2xl"
-                    />
-                  )}
-                  <div className="flex-1 space-y-2">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <h3 className="font-semibold text-lg">{item.coupon.title}</h3>
-                        {item.coupon.description && (
-                          <p className="text-sm text-muted-foreground">
-                            {item.coupon.description}
-                          </p>
+            {filteredCoupons.map((item) => {
+              // Check if within 12-hour viewing window
+              const redeemedTime = new Date(item.redeemed_at).getTime();
+              const now = new Date().getTime();
+              const hoursSinceRedemption = (now - redeemedTime) / (1000 * 60 * 60);
+              const canViewImage = hoursSinceRedemption <= 12;
+
+              return (
+                <Card key={item.id} className="p-6 rounded-3xl hover:shadow-soft transition-all">
+                  <div className="flex gap-4">
+                    {item.coupon.image_url && (
+                      <div className="relative">
+                        <img
+                          src={item.coupon.image_url}
+                          alt={item.coupon.title}
+                          className={`w-24 h-24 object-cover rounded-2xl ${
+                            canViewImage ? "cursor-pointer hover:opacity-80 transition-opacity" : "opacity-50"
+                          }`}
+                          onClick={() => handleImageClick(item)}
+                        />
+                        {!canViewImage && (
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-2xl">
+                            <span className="text-xs text-white text-center px-2">Expired</span>
+                          </div>
                         )}
                       </div>
-                      {item.coupon.is_surprise && (
-                        <span className="text-xs bg-primary/10 text-primary px-3 py-1 rounded-full">
-                          Surprise
-                        </span>
-                      )}
-                    </div>
-                    
-                    {item.reflection_note && (
-                      <div className="bg-muted/50 p-3 rounded-xl">
-                        <p className="text-sm italic text-foreground">
-                          "{item.reflection_note}"
-                        </p>
-                      </div>
                     )}
+                    <div className="flex-1 space-y-2">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <h3 className="font-semibold text-lg">{item.coupon.title}</h3>
+                          {item.coupon.description && (
+                            <p className="text-sm text-muted-foreground">
+                              {item.coupon.description}
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex gap-2">
+                          {item.coupon.is_surprise && (
+                            <span className="text-xs bg-primary/10 text-primary px-3 py-1 rounded-full">
+                              Surprise
+                            </span>
+                          )}
+                          {item.coupon.image_url && canViewImage && (
+                            <span className="text-xs bg-green-500/10 text-green-600 px-3 py-1 rounded-full">
+                              Viewable
+                            </span>
+                          )}
+                        </div>
+                      </div>
 
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Calendar className="w-4 h-4" />
-                      <span>{format(new Date(item.redeemed_at), "MMM d, yyyy 'at' h:mm a")}</span>
+                      {item.reflection_note && (
+                        <div className="bg-muted/50 p-3 rounded-xl">
+                          <p className="text-sm italic text-foreground">
+                            "{item.reflection_note}"
+                          </p>
+                        </div>
+                      )}
+
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Calendar className="w-4 h-4" />
+                        <span>{format(new Date(item.redeemed_at), "MMM d, yyyy 'at' h:mm a")}</span>
+                        {item.coupon.image_url && canViewImage && (
+                          <span className="text-xs">
+                            • {Math.floor(12 - hoursSinceRedemption)}h {Math.floor((12 - hoursSinceRedemption) * 60 % 60)}m remaining
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              </Card>
-            ))}
+                </Card>
+              );
+            })}
           </div>
         )}
       </main>
+
+      {/* Image Modal */}
+      {selectedImage && (
+        <ImageModal
+          open={!!selectedImage}
+          onOpenChange={(open) => !open && setSelectedImage(null)}
+          imageUrl={selectedImage.url}
+          title={selectedImage.title}
+          blurLevel={selectedImage.blurLevel}
+          description={selectedImage.description}
+        />
+      )}
     </div>
   );
 };
