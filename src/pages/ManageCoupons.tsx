@@ -7,6 +7,7 @@ import { Heart, ArrowLeft, Trash2, Plus, Sparkles, Edit } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import ImageModal from "@/components/ImageModal";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
+import { useSoftDelete } from "@/hooks/useSoftDelete";
 
 interface Coupon {
   id: string;
@@ -33,6 +34,7 @@ const ManageCoupons = () => {
   } | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { scheduleDelete, undoDelete, isPendingDelete, getExpiredDeletes } = useSoftDelete();
 
   // Keyboard shortcuts
   useKeyboardShortcuts({
@@ -44,6 +46,23 @@ const ManageCoupons = () => {
   useEffect(() => {
     checkUserAndFetchCoupons();
   }, []);
+
+  // Check for and process expired deletes
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const expired = getExpiredDeletes();
+      if (expired.length > 0) {
+        // Actually delete from database
+        expired.forEach(async (item) => {
+          await supabase.from("coupons").delete().eq("id", item.id);
+        });
+        // Refresh the coupon list
+        checkUserAndFetchCoupons();
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [getExpiredDeletes]);
 
   const checkUserAndFetchCoupons = async () => {
     const { data: { session } } = await supabase.auth.getSession();
@@ -79,32 +98,27 @@ const ManageCoupons = () => {
   };
 
   const deleteCoupon = async (couponId: string) => {
-    const confirmed = window.confirm(
-      "Are you sure you want to delete this coupon? This action cannot be undone."
-    );
+    // Schedule the delete
+    scheduleDelete(couponId);
 
-    if (!confirmed) return;
-
-    const { error } = await supabase
-      .from("coupons")
-      .delete()
-      .eq("id", couponId);
-
-    if (error) {
-      toast({
-        title: "Error",
-        description: "Failed to delete coupon",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    toast({
-      title: "Deleted",
-      description: "Coupon has been deleted",
+    // Show toast with undo action
+    const { dismiss } = toast({
+      title: "Coupon scheduled for deletion",
+      description: "This coupon will be permanently deleted in 30 seconds.",
+      duration: 30000, // Show for 30 seconds
+      action: {
+        label: "Undo",
+        onClick: () => {
+          // Undo the delete
+          undoDelete(couponId);
+          toast({
+            title: "Delete cancelled",
+            description: "Your coupon has been restored.",
+          });
+          dismiss();
+        },
+      },
     });
-
-    checkUserAndFetchCoupons();
   };
 
   if (loading) {
@@ -117,6 +131,9 @@ const ManageCoupons = () => {
       </div>
     );
   }
+
+  // Filter out coupons pending deletion
+  const visibleCoupons = createdCoupons.filter((coupon) => !isPendingDelete(coupon.id));
 
   return (
     <div className="min-h-screen pb-20">
@@ -177,11 +194,11 @@ const ManageCoupons = () => {
               💝 Coupons Created
             </p>
             <p className="text-4xl font-bold text-primary mb-1">
-              {createdCoupons.length}
+              {visibleCoupons.length}
             </p>
             <p className="text-sm text-muted-foreground">
-              {createdCoupons.length < 4
-                ? `Create ${4 - createdCoupons.length} more to unlock redemption`
+              {visibleCoupons.length < 4
+                ? `Create ${4 - visibleCoupons.length} more to unlock redemption`
                 : "You can redeem coupons from your partner! 🎉"}
             </p>
           </div>
@@ -193,7 +210,7 @@ const ManageCoupons = () => {
             <h2 className="text-2xl font-bold">Your Created Coupons</h2>
           </div>
 
-          {createdCoupons.length === 0 ? (
+          {visibleCoupons.length === 0 ? (
             <div className="text-center py-12">
               <Heart className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-semibold mb-2">No coupons created yet</h3>
@@ -209,7 +226,7 @@ const ManageCoupons = () => {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {createdCoupons.map((coupon) => (
+              {visibleCoupons.map((coupon) => (
                 <Card
                   key={coupon.id}
                   className="group relative aspect-[3/4] overflow-hidden rounded-3xl shadow-soft hover:shadow-glow transition-all border-2"
