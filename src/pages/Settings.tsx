@@ -86,7 +86,7 @@ const Settings = () => {
   };
 
   const linkWithPartner = async () => {
-    const trimmedEmail = partnerEmail.trim().toLowerCase();
+    const trimmedEmail = partnerEmail.trim();
 
     if (!trimmedEmail) {
       toast({
@@ -108,61 +108,28 @@ const Settings = () => {
       return;
     }
 
-    if (trimmedEmail === profile?.email.toLowerCase()) {
-      toast({
-        title: "Error",
-        description: "You cannot link with yourself!",
-        variant: "destructive",
-      });
-      return;
-    }
-
     setIsLinking(true);
 
     try {
-      // Find partner by email
-      const { data: partnerData, error: findError } = await supabase
-        .from("profiles")
-        .select("id, email, partner_id")
-        .eq("email", trimmedEmail)
-        .single();
+      // Call the database function to link partners
+      const { data, error } = await supabase.rpc('link_partners', {
+        partner_email: trimmedEmail
+      });
 
-      if (findError || !partnerData) {
+      if (error) {
         toast({
           title: "Error",
-          description: "No user found with this email address",
+          description: error.message,
           variant: "destructive",
         });
         setIsLinking(false);
         return;
       }
 
-      // Check if partner is already linked to someone else
-      if (partnerData.partner_id && partnerData.partner_id !== profile?.id) {
+      if (!data?.success) {
         toast({
           title: "Error",
-          description: "This person is already linked with another partner",
-          variant: "destructive",
-        });
-        setIsLinking(false);
-        return;
-      }
-
-      // Link both profiles
-      const { error: updateError1 } = await supabase
-        .from("profiles")
-        .update({ partner_id: partnerData.id })
-        .eq("id", profile?.id);
-
-      const { error: updateError2 } = await supabase
-        .from("profiles")
-        .update({ partner_id: profile?.id })
-        .eq("id", partnerData.id);
-
-      if (updateError1 || updateError2) {
-        toast({
-          title: "Error",
-          description: "Failed to link with partner",
+          description: data?.error || "Failed to link with partner",
           variant: "destructive",
         });
         setIsLinking(false);
@@ -171,15 +138,15 @@ const Settings = () => {
 
       toast({
         title: "Success!",
-        description: `You are now linked with ${partnerData.email}`,
+        description: `You are now linked with ${trimmedEmail}`,
       });
 
       setPartnerEmail("");
       fetchProfile();
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Error",
-        description: "An unexpected error occurred",
+        description: error?.message || "An unexpected error occurred",
         variant: "destructive",
       });
     } finally {
@@ -197,21 +164,22 @@ const Settings = () => {
     if (!confirmed) return;
 
     try {
-      // Unlink both profiles
-      const { error: updateError1 } = await supabase
-        .from("profiles")
-        .update({ partner_id: null, relationship_start_date: null })
-        .eq("id", profile.id);
+      // Call the database function to unlink partners
+      const { data, error } = await supabase.rpc('unlink_partner');
 
-      const { error: updateError2 } = await supabase
-        .from("profiles")
-        .update({ partner_id: null, relationship_start_date: null })
-        .eq("id", profile.partner_id);
-
-      if (updateError1 || updateError2) {
+      if (error) {
         toast({
           title: "Error",
-          description: "Failed to unlink partner",
+          description: error.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (!data?.success) {
+        toast({
+          title: "Error",
+          description: data?.error || "Failed to unlink partner",
           variant: "destructive",
         });
         return;
@@ -223,10 +191,10 @@ const Settings = () => {
       });
 
       fetchProfile();
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Error",
-        description: "An unexpected error occurred",
+        description: error?.message || "An unexpected error occurred",
         variant: "destructive",
       });
     }
@@ -290,17 +258,22 @@ const Settings = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-pink-50 p-4">
-      <div className="max-w-2xl mx-auto space-y-6 py-8">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold text-pink-900 flex items-center gap-2">
-            <Heart className="h-8 w-8 fill-pink-500 text-pink-500" />
-            Settings
-          </h1>
+    <div className="min-h-screen pb-20">
+      <header className="sticky top-0 bg-background/80 backdrop-blur-lg border-b border-border z-10">
+        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-primary to-accent rounded-full flex items-center justify-center">
+              <Heart className="w-5 h-5 text-white" fill="currentColor" />
+            </div>
+            <h1 className="text-xl font-bold">Settings</h1>
+          </div>
           <Button variant="outline" onClick={() => navigate("/home")} className="rounded-full">
             Back to Home
           </Button>
         </div>
+      </header>
+
+      <div className="max-w-2xl mx-auto px-4 space-y-6 py-8">
 
         {/* Partner Linking Section */}
         <Card className="rounded-3xl shadow-soft">
@@ -316,20 +289,35 @@ const Settings = () => {
           <CardContent className="space-y-4">
             {/* Current Partner Status */}
             {profile.partner_id && partnerProfile ? (
-              <div className="bg-green-50 border-2 border-green-200 rounded-3xl p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-600">Connected with</p>
-                    <p className="text-lg font-semibold text-green-800">{partnerProfile.email}</p>
+              <div className="bg-gradient-to-br from-peach to-soft-pink rounded-3xl p-8 shadow-soft">
+                <div className="flex flex-col items-center text-center space-y-4">
+                  {/* Connected Hearts */}
+                  <div className="flex items-center gap-2">
+                    <Heart className="w-12 h-12 text-primary animate-pulse" fill="currentColor" />
+                    <div className="flex items-center gap-1">
+                      <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
+                      <div className="w-2 h-2 bg-primary rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
+                      <div className="w-2 h-2 bg-primary rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
+                    </div>
+                    <Heart className="w-12 h-12 text-primary animate-pulse" fill="currentColor" style={{ animationDelay: '0.3s' }} />
                   </div>
+
+                  {/* Connection Info */}
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium text-primary">💕 Connected with</p>
+                    <p className="text-xl font-bold">{partnerProfile.email}</p>
+                    <p className="text-sm text-muted-foreground">You're sharing love coupons together!</p>
+                  </div>
+
+                  {/* Unlink Button */}
                   <Button
-                    variant="destructive"
+                    variant="outline"
                     size="sm"
                     onClick={unlinkPartner}
                     className="flex items-center gap-2 rounded-full"
                   >
                     <UserX className="h-4 w-4" />
-                    Unlink
+                    Unlink Partner
                   </Button>
                 </div>
               </div>
