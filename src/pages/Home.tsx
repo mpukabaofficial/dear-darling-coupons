@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Heart, LogOut, Calendar, Smile } from "lucide-react";
+import { Heart, LogOut, Calendar, Smile, Settings } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import CouponGrid from "@/components/CouponGrid";
 import MoodCheck from "@/components/MoodCheck";
@@ -79,18 +79,51 @@ const Home = () => {
             </div>
             <h1 className="text-xl font-bold">Love Coupons</h1>
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleLogout}
-            className="rounded-full"
-          >
-            <LogOut className="w-5 h-5" />
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate("/settings")}
+              className="rounded-full"
+            >
+              <Settings className="w-5 h-5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleLogout}
+              className="rounded-full"
+            >
+              <LogOut className="w-5 h-5" />
+            </Button>
+          </div>
         </div>
       </header>
 
       <main className="max-w-7xl mx-auto px-4 py-8 space-y-8">
+        {/* Partner Link Warning */}
+        {!profile?.partner_id && (
+          <div className="bg-pink-50 border-2 border-pink-200 rounded-3xl p-6">
+            <div className="flex items-start gap-4">
+              <Heart className="w-8 h-8 text-pink-500 mt-1" fill="currentColor" />
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-pink-900 mb-2">
+                  Link with Your Partner
+                </h3>
+                <p className="text-sm text-pink-800 mb-4">
+                  Connect with your partner to start creating and sharing love coupons together!
+                </p>
+                <Button
+                  onClick={() => navigate("/settings")}
+                  className="bg-pink-500 hover:bg-pink-600"
+                >
+                  Go to Settings
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Shared Stats Section */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="bg-gradient-to-br from-peach to-soft-pink p-6 rounded-3xl shadow-soft">

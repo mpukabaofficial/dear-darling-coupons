@@ -7,6 +7,7 @@ import Auth from "./pages/Auth";
 import Home from "./pages/Home";
 import CreateCoupon from "./pages/CreateCoupon";
 import History from "./pages/History";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -23,6 +24,7 @@ const App = () => (
           <Route path="/home" element={<Home />} />
           <Route path="/create-coupon" element={<CreateCoupon />} />
           <Route path="/history" element={<History />} />
+          <Route path="/settings" element={<Settings />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
