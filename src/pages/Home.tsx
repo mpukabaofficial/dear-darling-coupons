@@ -2,10 +2,11 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Heart, LogOut, Calendar, Smile, Settings, List } from "lucide-react";
+import { Heart, LogOut, Calendar, Smile, Settings, List, Gift } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import CouponGrid from "@/components/CouponGrid";
 import MoodCheck from "@/components/MoodCheck";
+import { useNotifications } from "@/hooks/useNotifications";
 
 interface Profile {
   id: string;
@@ -18,12 +19,30 @@ const Home = () => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [daysTogeth, setDaysTogether] = useState(0);
+  const [unredeemedCount, setUnredeemedCount] = useState(0);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { getUnredeemedCount } = useNotifications(profile?.id);
 
   useEffect(() => {
     checkUser();
   }, []);
+
+  useEffect(() => {
+    if (profile?.id) {
+      // Initial fetch
+      fetchUnredeemedCount();
+
+      // Fetch every minute
+      const interval = setInterval(fetchUnredeemedCount, 60000);
+      return () => clearInterval(interval);
+    }
+  }, [profile?.id]);
+
+  const fetchUnredeemedCount = async () => {
+    const count = await getUnredeemedCount();
+    setUnredeemedCount(count);
+  };
 
   const checkUser = async () => {
     const { data: { session } } = await supabase.auth.getSession();
@@ -132,6 +151,24 @@ const Home = () => {
                 >
                   Go to Settings
                 </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Unredeemed Coupons Alert */}
+        {profile?.partner_id && unredeemedCount > 0 && (
+          <div className="bg-gradient-to-br from-lavender to-accent rounded-3xl p-6 shadow-soft animate-pulse-subtle">
+            <div className="flex items-start gap-4">
+              <Gift className="w-8 h-8 text-primary mt-1" />
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold mb-2">
+                  {unredeemedCount} {unredeemedCount === 1 ? 'Coupon' : 'Coupons'} Waiting for You! 🎁
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  Your partner created {unredeemedCount === 1 ? 'a special coupon' : 'special coupons'} just for you.
+                  Scroll down to redeem {unredeemedCount === 1 ? 'it' : 'them'}!
+                </p>
               </div>
             </div>
           </div>
