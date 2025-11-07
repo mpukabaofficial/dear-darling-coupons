@@ -289,20 +289,41 @@ const Settings = () => {
           <CardContent className="space-y-4">
             {/* Current Partner Status */}
             {profile.partner_id && partnerProfile ? (
-              <div className="bg-green-50 border-2 border-green-200 rounded-3xl p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-600">Connected with</p>
-                    <p className="text-lg font-semibold text-green-800">{partnerProfile.email}</p>
+              <div className="bg-gradient-to-br from-pink-50 via-purple-50 to-pink-50 border-2 border-pink-200 rounded-3xl p-8">
+                <div className="flex flex-col items-center text-center space-y-4">
+                  {/* Connected Hearts */}
+                  <div className="flex items-center gap-2">
+                    <div className="relative">
+                      <Heart className="w-12 h-12 text-pink-500" fill="currentColor" />
+                      <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <div className="w-2 h-2 bg-pink-400 rounded-full animate-pulse"></div>
+                      <div className="w-2 h-2 bg-pink-400 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
+                      <div className="w-2 h-2 bg-pink-400 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
+                    </div>
+                    <div className="relative">
+                      <Heart className="w-12 h-12 text-pink-500" fill="currentColor" />
+                      <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>
+                    </div>
                   </div>
+
+                  {/* Connection Info */}
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium text-pink-600">💕 Connected with</p>
+                    <p className="text-xl font-bold text-pink-900">{partnerProfile.email}</p>
+                    <p className="text-xs text-pink-600">You're sharing love coupons together!</p>
+                  </div>
+
+                  {/* Unlink Button */}
                   <Button
-                    variant="destructive"
+                    variant="outline"
                     size="sm"
                     onClick={unlinkPartner}
-                    className="flex items-center gap-2 rounded-full"
+                    className="flex items-center gap-2 rounded-full border-pink-300 text-pink-700 hover:bg-pink-100"
                   >
                     <UserX className="h-4 w-4" />
-                    Unlink
+                    Unlink Partner
                   </Button>
                 </div>
               </div>
