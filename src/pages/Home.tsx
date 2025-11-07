@@ -21,6 +21,7 @@ const Home = () => {
   const [daysTogeth, setDaysTogether] = useState(0);
   const [unredeemedCount, setUnredeemedCount] = useState(0);
   const [currentStatIndex, setCurrentStatIndex] = useState(0);
+  const [currentTime, setCurrentTime] = useState(new Date());
   const navigate = useNavigate();
   const { toast } = useToast();
   const { getUnredeemedCount } = useNotifications(profile?.id);
@@ -39,6 +40,15 @@ const Home = () => {
       return () => clearInterval(interval);
     }
   }, [profile?.id]);
+
+  // Update current time every second for live counting
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   const fetchUnredeemedCount = async () => {
     const count = await getUnredeemedCount();
@@ -83,15 +93,18 @@ const Home = () => {
 
     // Parse the date at midnight UTC to avoid timezone issues
     const startDate = new Date(profile.relationship_start_date + 'T00:00:00Z');
-    const todayDate = new Date();
-    todayDate.setHours(0, 0, 0, 0); // Set to midnight for consistent comparison
 
-    // Calculate total time differences
-    const totalMs = todayDate.getTime() - startDate.getTime();
-    const totalSeconds = Math.floor(totalMs / 1000);
+    // For live counting of seconds, use current time with full precision
+    const totalMsLive = currentTime.getTime() - startDate.getTime();
+    const totalSeconds = Math.floor(totalMsLive / 1000);
     const totalMinutes = Math.floor(totalSeconds / 60);
     const totalHours = Math.floor(totalMinutes / 60);
-    const totalDays = Math.floor(totalHours / 24);
+
+    // For days/weeks/months/years, use midnight to keep values stable throughout the day
+    const todayDate = new Date(currentTime);
+    todayDate.setHours(0, 0, 0, 0);
+    const totalMs = todayDate.getTime() - startDate.getTime();
+    const totalDays = Math.floor(totalMs / (1000 * 60 * 60 * 24));
     const totalWeeks = Math.floor(totalDays / 7);
 
     // Calculate years, months, days breakdown using proper date arithmetic
