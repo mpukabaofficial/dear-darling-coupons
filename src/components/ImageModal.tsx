@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -24,6 +25,9 @@ const ImageModal = ({
   blurLevel,
   description,
 }: ImageModalProps) => {
+  const [isDescriptionLocked, setIsDescriptionLocked] = useState(false);
+  const [isHovering, setIsHovering] = useState(false);
+
   // Modal images are never blurred - only the overlay changes
   const getBlurClass = () => {
     return ""; // Always return empty - no blur on modal images
@@ -54,28 +58,44 @@ const ImageModal = ({
     }
   };
 
+  const showDescription = isHovering || isDescriptionLocked;
+
+  const handleClick = () => {
+    setIsDescriptionLocked(!isDescriptionLocked);
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[90vw] max-h-[90vh] w-full rounded-3xl p-0 overflow-hidden flex flex-col">
-        <div className="relative flex-shrink-0 max-h-[60vh] overflow-y-auto">
+      <DialogContent className="max-w-[90vw] max-h-[90vh] w-full rounded-3xl p-0 overflow-hidden">
+        <div
+          className="relative w-full max-h-[90vh] flex items-center justify-center cursor-pointer"
+          onMouseEnter={() => setIsHovering(true)}
+          onMouseLeave={() => setIsHovering(false)}
+          onClick={handleClick}
+        >
           <img
             src={imageUrl}
             alt={title}
-            className={`w-full h-auto object-contain ${getBlurClass()}`}
+            className="w-full h-auto max-h-[90vh] object-contain"
           />
           {getBlurMessage()}
-        </div>
-        <div className="p-6 flex-shrink-0 overflow-y-auto max-h-[25vh]">
-          <DialogHeader>
-            <DialogTitle className="text-2xl font-bold text-primary">
-              {title}
-            </DialogTitle>
-            {description && (
-              <DialogDescription className="text-base pt-2">
+
+          {/* Description overlay - appears on hover or when locked */}
+          {description && showDescription && (
+            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/80 to-transparent p-6 pt-12">
+              <h3 className="text-white font-bold text-xl mb-2">{title}</h3>
+              <p className="text-white/90 text-sm leading-relaxed">
                 {description}
-              </DialogDescription>
-            )}
-          </DialogHeader>
+              </p>
+            </div>
+          )}
+
+          {/* Title only (no description) */}
+          {!description && (
+            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/80 to-transparent p-6 pt-12">
+              <h3 className="text-white font-bold text-xl">{title}</h3>
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>
