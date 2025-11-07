@@ -8,7 +8,8 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Upload, X, Sparkles } from "lucide-react";
+import { ArrowLeft, Upload, Sparkles } from "lucide-react";
+import ImagePreview from "@/components/ImagePreview";
 import { z } from "zod";
 
 const couponSchema = z.object({
@@ -337,22 +338,7 @@ const CreateCoupon = () => {
           <div className="space-y-2">
             <Label>Coupon Image (Optional)</Label>
             {imagePreview ? (
-              <div className="relative">
-                <img
-                  src={imagePreview}
-                  alt="Preview"
-                  className="w-full h-64 object-cover rounded-2xl"
-                />
-                <Button
-                  type="button"
-                  variant="destructive"
-                  size="icon"
-                  onClick={removeImage}
-                  className="absolute top-2 right-2 rounded-full"
-                >
-                  <X className="w-4 h-4" />
-                </Button>
-              </div>
+              <ImagePreview src={imagePreview} onRemove={removeImage} />
             ) : (
               <label className="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed border-muted-foreground/30 rounded-2xl cursor-pointer hover:bg-muted/50 transition-colors">
                 <Upload className="w-10 h-10 text-muted-foreground mb-2" />

@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card";
 import { ArrowLeft, Search, Heart, Calendar } from "lucide-react";
 import { format } from "date-fns";
 import ImageModal from "@/components/ImageModal";
+import { HistorySkeleton } from "@/components/HistorySkeleton";
 import { useToast } from "@/hooks/use-toast";
 
 interface RedeemedCoupon {
@@ -124,11 +125,23 @@ const History = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-pulse flex flex-col items-center gap-4">
-          <Heart className="w-12 h-12 text-primary animate-bounce" fill="currentColor" />
-          <p className="text-muted-foreground">Loading memories...</p>
-        </div>
+      <div className="min-h-screen pb-20">
+        <header className="sticky top-0 bg-background/80 backdrop-blur-lg border-b border-border z-10">
+          <div className="max-w-4xl mx-auto px-4 py-4 flex items-center gap-4">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate("/home")}
+              className="rounded-full"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+            <h1 className="text-xl font-bold">Our Memories</h1>
+          </div>
+        </header>
+        <main className="max-w-4xl mx-auto px-4 py-8">
+          <HistorySkeleton />
+        </main>
       </div>
     );
   }
