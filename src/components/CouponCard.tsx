@@ -177,7 +177,7 @@ const CouponCard = ({ coupon, onRedeemed }: CouponCardProps) => {
             <img
               src={coupon.image_url}
               alt={coupon.title}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover blur-3xl"
             />
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-peach via-soft-pink to-lavender" />

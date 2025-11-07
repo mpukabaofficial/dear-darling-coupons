@@ -24,39 +24,28 @@ const ImageModal = ({
   blurLevel,
   description,
 }: ImageModalProps) => {
+  // Modal images are never blurred - only the overlay changes
   const getBlurClass = () => {
-    switch (blurLevel) {
-      case "harsh":
-        return "blur-3xl";
-      case "mild":
-        return "blur-sm";
-      case "none":
-        return "";
-      default:
-        return "";
-    }
+    return ""; // Always return empty - no blur on modal images
   };
 
   const getBlurMessage = () => {
     switch (blurLevel) {
       case "harsh":
         return (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-            <div className="text-center space-y-3 p-6 bg-black/70 rounded-3xl backdrop-blur-sm">
-              <EyeOff className="w-16 h-16 text-white mx-auto" />
-              <p className="text-white font-bold text-xl">Not Yet Redeemed</p>
-              <p className="text-white/80 text-sm">
-                Redeem this coupon to reveal the surprise! 🎁
-              </p>
+          <div className="absolute top-4 right-4 bg-rose-500/90 backdrop-blur-sm px-4 py-2 rounded-full shadow-lg">
+            <div className="flex items-center gap-2 text-white text-sm font-medium">
+              <EyeOff className="w-4 h-4" />
+              <span>Not Yet Redeemed</span>
             </div>
           </div>
         );
       case "mild":
         return (
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/60 backdrop-blur-sm px-4 py-2 rounded-full">
-            <div className="flex items-center gap-2 text-white text-sm">
+          <div className="absolute top-4 right-4 bg-green-500/90 backdrop-blur-sm px-4 py-2 rounded-full shadow-lg">
+            <div className="flex items-center gap-2 text-white text-sm font-medium">
               <Eye className="w-4 h-4" />
-              <span>Redeemed - Slightly blurred for the magic ✨</span>
+              <span>Redeemed ✨</span>
             </div>
           </div>
         );

@@ -97,12 +97,12 @@ const History = () => {
     const hoursSinceRedemption = (now - redeemedTime) / (1000 * 60 * 60);
 
     if (hoursSinceRedemption <= 12) {
-      // Within 12 hours - show with mild blur
+      // Within 12 hours - show clear in modal
       setSelectedImage({
         url: item.coupon.image_url,
         title: item.coupon.title,
         description: item.coupon.description || undefined,
-        blurLevel: "mild",
+        blurLevel: "mild", // Shows "Redeemed" badge but image is clear
       });
     } else {
       // Outside 12-hour window
@@ -200,7 +200,9 @@ const History = () => {
                           src={item.coupon.image_url}
                           alt={item.coupon.title}
                           className={`w-24 h-24 object-cover rounded-2xl ${
-                            canViewImage ? "cursor-pointer hover:opacity-80 transition-opacity" : "opacity-50"
+                            canViewImage
+                              ? "blur-sm cursor-pointer hover:opacity-80 transition-opacity"
+                              : "blur-sm opacity-50"
                           }`}
                           onClick={() => handleImageClick(item)}
                         />
