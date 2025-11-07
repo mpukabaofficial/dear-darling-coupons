@@ -203,9 +203,9 @@ const Home = () => {
               <Heart className="w-5 h-5 text-white" fill="currentColor" />
             </div>
             <div className="flex items-center gap-2">
-              <h1 className="text-xl font-bold">Love Coupons</h1>
+              <h1 className="text-xl font-bold hidden md:block">Love Coupons</h1>
               {profile?.partner_id && (
-                <div className="flex items-center gap-1 ml-2">
+                <div className="flex items-center gap-1 ml-2 hidden md:flex">
                   <Heart className="w-4 h-4 text-primary animate-pulse" fill="currentColor" />
                   <div className="flex items-center gap-0.5">
                     <div className="w-1 h-1 bg-primary rounded-full animate-pulse"></div>
