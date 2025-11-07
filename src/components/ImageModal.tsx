@@ -66,9 +66,9 @@ const ImageModal = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[90vw] max-h-[90vh] w-full rounded-3xl p-0 overflow-hidden">
+      <DialogContent className="max-w-[90vw] max-h-[90vh] w-auto h-auto rounded-3xl p-0 overflow-hidden border-0">
         <div
-          className="relative w-full max-h-[90vh] flex items-center justify-center cursor-pointer"
+          className="relative w-auto h-auto cursor-pointer"
           onMouseEnter={() => setIsHovering(true)}
           onMouseLeave={() => setIsHovering(false)}
           onClick={handleClick}
@@ -76,7 +76,7 @@ const ImageModal = ({
           <img
             src={imageUrl}
             alt={title}
-            className="w-full h-auto max-h-[90vh] object-contain"
+            className="w-auto h-auto max-w-[90vw] max-h-[90vh] object-contain block"
           />
           {getBlurMessage()}
 

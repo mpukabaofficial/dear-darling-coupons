@@ -14,7 +14,6 @@ import { Heart, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import confetti from "canvas-confetti";
-import ImageModal from "./ImageModal";
 
 interface Coupon {
   id: string;
@@ -34,7 +33,6 @@ interface CouponCardProps {
 const CouponCard = ({ coupon, onRedeemed }: CouponCardProps) => {
   const [showConfirm, setShowConfirm] = useState(false);
   const [showReveal, setShowReveal] = useState(false);
-  const [showImageModal, setShowImageModal] = useState(false);
   const [reflection, setReflection] = useState("");
   const [redeeming, setRedeeming] = useState(false);
   const { toast } = useToast();
@@ -164,14 +162,7 @@ const CouponCard = ({ coupon, onRedeemed }: CouponCardProps) => {
       <Card className="group relative aspect-[3/4] overflow-hidden rounded-3xl shadow-soft hover:shadow-glow transition-all border-2">
         <div
           className="w-full h-full cursor-pointer"
-          onClick={(e) => {
-            // If clicking the image area and there's an image, show modal
-            if (coupon.image_url) {
-              setShowImageModal(true);
-            } else {
-              handleRedeemClick();
-            }
-          }}
+          onClick={handleRedeemClick}
         >
           {coupon.image_url ? (
             <img
@@ -191,9 +182,7 @@ const CouponCard = ({ coupon, onRedeemed }: CouponCardProps) => {
             <div className="space-y-2 text-center">
               <Sparkles className="w-8 h-8 text-white mx-auto animate-pulse" />
               <p className="text-white font-bold text-lg">Surprise Coupon! 🎁</p>
-              <p className="text-white/80 text-sm">
-                {coupon.image_url ? "Tap to view • " : "Tap to reveal"}
-              </p>
+              <p className="text-white/80 text-sm">Tap to reveal</p>
             </div>
           ) : (
             <>
@@ -204,7 +193,7 @@ const CouponCard = ({ coupon, onRedeemed }: CouponCardProps) => {
                 </p>
               )}
               {coupon.image_url && (
-                <p className="text-white/80 text-xs mt-2">Tap to view image</p>
+                <p className="text-white/80 text-xs mt-2">Tap to redeem</p>
               )}
             </>
           )}
@@ -233,18 +222,6 @@ const CouponCard = ({ coupon, onRedeemed }: CouponCardProps) => {
           )}
         </div>
       </Card>
-
-      {/* Image Modal for unredeemed coupons */}
-      {coupon.image_url && (
-        <ImageModal
-          open={showImageModal}
-          onOpenChange={setShowImageModal}
-          imageUrl={coupon.image_url}
-          title={coupon.is_surprise ? "Surprise Coupon 🎁" : coupon.title}
-          blurLevel="harsh"
-          description={coupon.is_surprise ? "Redeem this coupon to reveal the full surprise!" : coupon.description || undefined}
-        />
-      )}
 
       {/* Confirmation Dialog */}
       <Dialog open={showConfirm} onOpenChange={setShowConfirm}>
