@@ -56,16 +56,16 @@ const ImageModal = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl rounded-3xl p-0 overflow-hidden">
-        <div className="relative">
+      <DialogContent className="max-w-[90vw] max-h-[90vh] w-full rounded-3xl p-0 overflow-hidden flex flex-col">
+        <div className="relative flex-shrink-0 max-h-[60vh] overflow-y-auto">
           <img
             src={imageUrl}
             alt={title}
-            className={`w-full h-auto ${getBlurClass()}`}
+            className={`w-full h-auto object-contain ${getBlurClass()}`}
           />
           {getBlurMessage()}
         </div>
-        <div className="p-6">
+        <div className="p-6 flex-shrink-0 overflow-y-auto max-h-[25vh]">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold text-primary">
               {title}
