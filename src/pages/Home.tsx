@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Heart, LogOut, Calendar, Smile, Settings, List, Gift, ChevronLeft, ChevronRight } from "lucide-react";
+import { Heart, LogOut, Calendar, Smile, Settings, List, Gift, ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import CouponGrid from "@/components/CouponGrid";
 import MoodCheck from "@/components/MoodCheck";
@@ -305,16 +305,17 @@ const Home = () => {
               <Button
                 variant="outline"
                 onClick={() => navigate("/manage-coupons")}
-                className="rounded-full flex items-center gap-2"
+                className="rounded-full flex items-center gap-2 md:px-4 px-3"
               >
                 <List className="w-4 h-4" />
-                Manage
+                <span className="hidden md:inline">Manage</span>
               </Button>
               <Button
                 onClick={() => navigate("/create-coupon")}
-                className="rounded-full shadow-soft"
+                className="rounded-full shadow-soft flex items-center gap-2 md:px-4 px-3"
               >
-                Create Coupon for Partner
+                <Plus className="w-4 h-4" />
+                <span className="hidden md:inline">Create Coupon for Partner</span>
               </Button>
             </div>
           </div>
