@@ -6,7 +6,6 @@ import { Card } from "@/components/ui/card";
 import { Heart, ArrowLeft, Trash2, Plus, Sparkles, Edit } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import ImageModal from "@/components/ImageModal";
-import { CouponGridSkeleton } from "@/components/CouponSkeleton";
 
 interface Coupon {
   id: string;
@@ -102,37 +101,11 @@ const ManageCoupons = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen pb-20">
-        <header className="sticky top-0 bg-background/80 backdrop-blur-lg border-b border-border z-10">
-          <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => navigate("/home")}
-                className="rounded-full"
-              >
-                <ArrowLeft className="w-5 h-5" />
-              </Button>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-primary to-accent rounded-full flex items-center justify-center">
-                  <Heart className="w-5 h-5 text-white" fill="currentColor" />
-                </div>
-                <h1 className="text-xl font-bold">Manage Coupons</h1>
-              </div>
-            </div>
-            <Button
-              onClick={() => navigate("/create-coupon")}
-              className="rounded-full shadow-soft flex items-center gap-2"
-            >
-              <Plus className="w-4 h-4" />
-              Create New
-            </Button>
-          </div>
-        </header>
-        <main className="max-w-7xl mx-auto px-4 py-8">
-          <CouponGridSkeleton />
-        </main>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-pulse flex flex-col items-center gap-4">
+          <Heart className="w-12 h-12 text-primary animate-bounce" fill="currentColor" />
+          <p className="text-muted-foreground">Loading your coupons...</p>
+        </div>
       </div>
     );
   }

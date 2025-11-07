@@ -96,41 +96,23 @@ const Home = () => {
     const totalMonths = Math.floor(totalDays / 30.44); // Average days per month
 
     // Calculate years, months, days breakdown
-    let years = 0;
-    let months = 0;
-    let days = 0;
+    let years = today.getFullYear() - start.getFullYear();
+    let months = today.getMonth() - start.getMonth();
+    let days = today.getDate() - start.getDate();
 
-    let tempDate = new Date(start);
-
-    // Count full years
-    while (tempDate.getFullYear() < today.getFullYear() ||
-           (tempDate.getFullYear() === today.getFullYear() && tempDate.getMonth() < today.getMonth()) ||
-           (tempDate.getFullYear() === today.getFullYear() && tempDate.getMonth() === today.getMonth() && tempDate.getDate() <= today.getDate())) {
-      const nextYear = new Date(tempDate);
-      nextYear.setFullYear(nextYear.getFullYear() + 1);
-      if (nextYear <= today) {
-        years++;
-        tempDate = nextYear;
-      } else {
-        break;
-      }
+    // Adjust if days are negative
+    if (days < 0) {
+      months--;
+      // Get days in previous month
+      const prevMonth = new Date(today.getFullYear(), today.getMonth(), 0);
+      days += prevMonth.getDate();
     }
 
-    // Count remaining months
-    while (tempDate.getMonth() < today.getMonth() ||
-           (tempDate.getMonth() === today.getMonth() && tempDate.getDate() <= today.getDate())) {
-      const nextMonth = new Date(tempDate);
-      nextMonth.setMonth(nextMonth.getMonth() + 1);
-      if (nextMonth <= today) {
-        months++;
-        tempDate = nextMonth;
-      } else {
-        break;
-      }
+    // Adjust if months are negative
+    if (months < 0) {
+      years--;
+      months += 12;
     }
-
-    // Remaining days
-    days = Math.floor((today.getTime() - tempDate.getTime()) / (1000 * 60 * 60 * 24));
 
     // Create calendar string
     const parts = [];
