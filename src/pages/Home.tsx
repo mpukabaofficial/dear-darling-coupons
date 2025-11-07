@@ -2,13 +2,15 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Heart, LogOut, Calendar, Smile, Settings, List, Gift, ChevronLeft, ChevronRight, Plus, Shuffle } from "lucide-react";
+import { Heart, LogOut, Calendar, Smile, Settings, List, Gift, ChevronLeft, ChevronRight, Plus, Shuffle, Star } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import CouponGrid from "@/components/CouponGrid";
 import MoodCheck from "@/components/MoodCheck";
 import RandomCouponPicker from "@/components/RandomCouponPicker";
+import CouponCard from "@/components/CouponCard";
 import { useNotifications } from "@/hooks/useNotifications";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
+import { useFavorites } from "@/hooks/useFavorites";
 
 interface Profile {
   id: string;
@@ -23,6 +25,8 @@ interface Coupon {
   description: string | null;
   image_url: string | null;
   is_surprise: boolean;
+  created_by?: string;
+  for_partner?: string;
 }
 
 const Home = () => {
@@ -34,9 +38,11 @@ const Home = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [showRandomPicker, setShowRandomPicker] = useState(false);
   const [availableCoupons, setAvailableCoupons] = useState<Coupon[]>([]);
+  const [favoriteCoupons, setFavoriteCoupons] = useState<Coupon[]>([]);
   const navigate = useNavigate();
   const { toast } = useToast();
   const { getUnredeemedCount } = useNotifications(profile?.id);
+  const { favorites } = useFavorites();
 
   // Keyboard shortcuts
   useKeyboardShortcuts({
@@ -69,6 +75,15 @@ const Home = () => {
     return () => clearInterval(interval);
   }, []);
 
+  // Fetch favorite coupons when favorites change
+  useEffect(() => {
+    if (profile?.id && favorites.length > 0) {
+      fetchFavoriteCoupons();
+    } else {
+      setFavoriteCoupons([]);
+    }
+  }, [favorites, profile?.id]);
+
   const fetchUnredeemedCount = async () => {
     const count = await getUnredeemedCount();
     setUnredeemedCount(count);
@@ -86,6 +101,25 @@ const Home = () => {
 
     if (!error && data) {
       setAvailableCoupons(data);
+    }
+  };
+
+  const fetchFavoriteCoupons = async () => {
+    if (!profile?.id || favorites.length === 0) return;
+
+    const { data, error } = await supabase
+      .from("coupons")
+      .select("id, title, description, image_url, is_surprise, created_by, for_partner")
+      .eq("recipient_id", profile.id)
+      .is("redeemed_at", null)
+      .in("id", favorites);
+
+    if (!error && data) {
+      // Sort by favorites array order to maintain user's preferred order
+      const sorted = favorites
+        .map((favId) => data.find((coupon) => coupon.id === favId))
+        .filter((coupon): coupon is Coupon & { created_by: string; for_partner: string } => coupon !== undefined);
+      setFavoriteCoupons(sorted);
     }
   };
 
@@ -398,6 +432,31 @@ const Home = () => {
             <MoodCheck userId={profile?.id || ""} />
           </div>
         </div>
+
+        {/* Quick Access - Favorited Coupons */}
+        {favoriteCoupons.length > 0 && (
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
+              <Star className="w-6 h-6 text-yellow-500" fill="currentColor" />
+              <h2 className="text-2xl font-bold">Quick Access</h2>
+              <span className="text-sm text-muted-foreground">
+                ({favoriteCoupons.length} favorite{favoriteCoupons.length !== 1 ? 's' : ''})
+              </span>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {favoriteCoupons.map((coupon) => (
+                <CouponCard
+                  key={coupon.id}
+                  coupon={coupon}
+                  onRedeemed={() => {
+                    fetchFavoriteCoupons();
+                    fetchUnredeemedCount();
+                  }}
+                />
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Coupons Section */}
         <div className="space-y-4">
