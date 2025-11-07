@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Heart, LogOut, Calendar, Smile, Settings, List, Gift } from "lucide-react";
+import { Heart, LogOut, Calendar, Smile, Settings, List, Gift, ChevronLeft, ChevronRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import CouponGrid from "@/components/CouponGrid";
 import MoodCheck from "@/components/MoodCheck";
@@ -20,6 +20,7 @@ const Home = () => {
   const [loading, setLoading] = useState(true);
   const [daysTogeth, setDaysTogether] = useState(0);
   const [unredeemedCount, setUnredeemedCount] = useState(0);
+  const [currentStatIndex, setCurrentStatIndex] = useState(0);
   const navigate = useNavigate();
   const { toast } = useToast();
   const { getUnredeemedCount } = useNotifications(profile?.id);
@@ -75,6 +76,93 @@ const Home = () => {
   const handleLogout = async () => {
     await supabase.auth.signOut();
     navigate("/auth");
+  };
+
+  const getRelationshipStats = () => {
+    if (!profile?.relationship_start_date) return null;
+
+    const start = new Date(profile.relationship_start_date);
+    const today = new Date();
+
+    // Total time in milliseconds
+    const totalMs = today.getTime() - start.getTime();
+
+    // Calculate all time units
+    const totalSeconds = Math.floor(totalMs / 1000);
+    const totalMinutes = Math.floor(totalSeconds / 60);
+    const totalHours = Math.floor(totalMinutes / 60);
+    const totalDays = Math.floor(totalHours / 24);
+    const totalWeeks = Math.floor(totalDays / 7);
+    const totalMonths = Math.floor(totalDays / 30.44); // Average days per month
+
+    // Calculate years, months, days breakdown
+    let years = 0;
+    let months = 0;
+    let days = 0;
+
+    let tempDate = new Date(start);
+
+    // Count full years
+    while (tempDate.getFullYear() < today.getFullYear() ||
+           (tempDate.getFullYear() === today.getFullYear() && tempDate.getMonth() < today.getMonth()) ||
+           (tempDate.getFullYear() === today.getFullYear() && tempDate.getMonth() === today.getMonth() && tempDate.getDate() <= today.getDate())) {
+      const nextYear = new Date(tempDate);
+      nextYear.setFullYear(nextYear.getFullYear() + 1);
+      if (nextYear <= today) {
+        years++;
+        tempDate = nextYear;
+      } else {
+        break;
+      }
+    }
+
+    // Count remaining months
+    while (tempDate.getMonth() < today.getMonth() ||
+           (tempDate.getMonth() === today.getMonth() && tempDate.getDate() <= today.getDate())) {
+      const nextMonth = new Date(tempDate);
+      nextMonth.setMonth(nextMonth.getMonth() + 1);
+      if (nextMonth <= today) {
+        months++;
+        tempDate = nextMonth;
+      } else {
+        break;
+      }
+    }
+
+    // Remaining days
+    days = Math.floor((today.getTime() - tempDate.getTime()) / (1000 * 60 * 60 * 24));
+
+    // Create calendar string
+    const parts = [];
+    if (years > 0) parts.push(`${years} year${years !== 1 ? 's' : ''}`);
+    if (months > 0) parts.push(`${months} month${months !== 1 ? 's' : ''}`);
+    if (days > 0 || parts.length === 0) parts.push(`${days} day${days !== 1 ? 's' : ''}`);
+    const calendarString = parts.join(', ');
+
+    return [
+      { label: 'Calendar Time', value: calendarString, sublabel: 'Together' },
+      { label: 'Total Days', value: totalDays.toLocaleString(), sublabel: 'Days' },
+      { label: 'Years', value: years.toString(), sublabel: years === 1 ? 'Year' : 'Years' },
+      { label: 'Months (Remaining)', value: months.toString(), sublabel: months === 1 ? 'Month' : 'Months' },
+      { label: 'Days (Remaining)', value: days.toString(), sublabel: days === 1 ? 'Day' : 'Days' },
+      { label: 'Anniversaries', value: years.toString(), sublabel: years === 1 ? 'Anniversary' : 'Anniversaries' },
+      { label: 'Total Weeks', value: totalWeeks.toLocaleString(), sublabel: 'Weeks' },
+      { label: 'Total Hours', value: totalHours.toLocaleString(), sublabel: 'Hours' },
+      { label: 'Total Minutes', value: totalMinutes.toLocaleString(), sublabel: 'Minutes' },
+      { label: 'Total Seconds', value: totalSeconds.toLocaleString(), sublabel: 'Seconds' },
+    ];
+  };
+
+  const stats = getRelationshipStats();
+
+  const nextStat = () => {
+    if (!stats) return;
+    setCurrentStatIndex((prev) => (prev + 1) % stats.length);
+  };
+
+  const prevStat = () => {
+    if (!stats) return;
+    setCurrentStatIndex((prev) => (prev - 1 + stats.length) % stats.length);
   };
 
   if (loading) {
@@ -176,18 +264,45 @@ const Home = () => {
 
         {/* Shared Stats Section */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="bg-gradient-to-br from-peach to-soft-pink p-6 rounded-3xl shadow-soft">
+          <div className="bg-gradient-to-br from-peach to-soft-pink p-6 rounded-3xl shadow-soft relative">
             <div className="flex items-center gap-3 mb-2">
               <Calendar className="w-6 h-6 text-primary" />
               <h3 className="text-lg font-semibold">Days Together</h3>
             </div>
-            <p className="text-4xl font-bold text-primary">
-              {profile?.relationship_start_date ? daysTogeth : "—"}
-            </p>
-            {!profile?.relationship_start_date && (
-              <p className="text-sm text-muted-foreground mt-2">
-                Set your relationship start date in settings
-              </p>
+            {stats ? (
+              <>
+                <div className="absolute top-6 right-6 flex gap-1">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={prevStat}
+                    className="h-8 w-8 rounded-full hover:bg-primary/20"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={nextStat}
+                    className="h-8 w-8 rounded-full hover:bg-primary/20"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </Button>
+                </div>
+                <p className="text-4xl font-bold text-primary mb-1">
+                  {stats[currentStatIndex].value}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {stats[currentStatIndex].sublabel}
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="text-4xl font-bold text-primary">—</p>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Set your relationship start date in settings
+                </p>
+              </>
             )}
           </div>
 
