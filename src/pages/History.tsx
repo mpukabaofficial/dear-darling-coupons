@@ -12,12 +12,14 @@ import { useToast } from "@/hooks/use-toast";
 interface RedeemedCoupon {
   id: string;
   redeemed_at: string;
+  redeemed_by: string;
   reflection_note: string | null;
   coupon: {
     title: string;
     description: string | null;
     image_url: string | null;
     is_surprise: boolean;
+    created_by: string;
   };
 }
 
@@ -26,6 +28,7 @@ const History = () => {
   const [filteredCoupons, setFilteredCoupons] = useState<RedeemedCoupon[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
+  const [currentUserId, setCurrentUserId] = useState<string>("");
   const [selectedImage, setSelectedImage] = useState<{
     url: string;
     title: string;
@@ -59,17 +62,21 @@ const History = () => {
       return;
     }
 
+    setCurrentUserId(session.user.id);
+
     const { data } = await supabase
       .from("redeemed_coupons")
       .select(`
         id,
         redeemed_at,
+        redeemed_by,
         reflection_note,
         coupons (
           title,
           description,
           image_url,
-          is_surprise
+          is_surprise,
+          created_by
         )
       `)
       .order("redeemed_at", { ascending: false });
@@ -78,6 +85,7 @@ const History = () => {
       const formatted = data.map((item: any) => ({
         id: item.id,
         redeemed_at: item.redeemed_at,
+        redeemed_by: item.redeemed_by,
         reflection_note: item.reflection_note,
         coupon: item.coupons,
       }));
@@ -191,6 +199,10 @@ const History = () => {
               const hoursSinceRedemption = (now - redeemedTime) / (1000 * 60 * 60);
               const canViewImage = hoursSinceRedemption <= 12;
 
+              // Determine who created and who redeemed
+              const createdByYou = item.coupon.created_by === currentUserId;
+              const redeemedByYou = item.redeemed_by === currentUserId;
+
               return (
                 <Card key={item.id} className="p-6 rounded-3xl hover:shadow-soft transition-all">
                   <div className="flex gap-4">
@@ -222,6 +234,15 @@ const History = () => {
                               {item.coupon.description}
                             </p>
                           )}
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="text-xs text-muted-foreground">
+                              Created by {createdByYou ? "You" : "Partner"}
+                            </span>
+                            <span className="text-xs text-muted-foreground">•</span>
+                            <span className="text-xs text-muted-foreground">
+                              Redeemed by {redeemedByYou ? "You" : "Partner"}
+                            </span>
+                          </div>
                         </div>
                         <div className="flex gap-2">
                           {item.coupon.is_surprise && (
