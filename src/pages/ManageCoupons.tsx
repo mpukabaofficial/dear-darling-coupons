@@ -3,8 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Heart, ArrowLeft, Trash2, Plus, Sparkles } from "lucide-react";
+import { Heart, ArrowLeft, Trash2, Plus, Sparkles, Edit } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import ImageModal from "@/components/ImageModal";
 
 interface Coupon {
   id: string;
@@ -24,6 +25,11 @@ const ManageCoupons = () => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [createdCoupons, setCreatedCoupons] = useState<Coupon[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedImage, setSelectedImage] = useState<{
+    url: string;
+    title: string;
+    description?: string;
+  } | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -200,17 +206,30 @@ const ManageCoupons = () => {
                   key={coupon.id}
                   className="group relative aspect-[3/4] overflow-hidden rounded-3xl shadow-soft hover:shadow-glow transition-all border-2"
                 >
-                  {coupon.image_url ? (
-                    <img
-                      src={coupon.image_url}
-                      alt={coupon.title}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-peach via-soft-pink to-lavender" />
-                  )}
+                  <div
+                    className="w-full h-full cursor-pointer"
+                    onClick={() => {
+                      if (coupon.image_url) {
+                        setSelectedImage({
+                          url: coupon.image_url,
+                          title: coupon.title,
+                          description: coupon.description || undefined,
+                        });
+                      }
+                    }}
+                  >
+                    {coupon.image_url ? (
+                      <img
+                        src={coupon.image_url}
+                        alt={coupon.title}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-peach via-soft-pink to-lavender" />
+                    )}
+                  </div>
 
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent p-6 flex flex-col justify-end">
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent p-6 flex flex-col justify-end pointer-events-none">
                     {coupon.is_surprise ? (
                       <div className="space-y-2 text-center">
                         <Sparkles className="w-8 h-8 text-white mx-auto animate-pulse" />
@@ -226,11 +245,27 @@ const ManageCoupons = () => {
                         )}
                       </>
                     )}
+                    {coupon.image_url && (
+                      <p className="text-white/80 text-xs mt-2">Tap to view image</p>
+                    )}
                   </div>
 
-                  <div className="absolute top-4 right-4">
+                  <div className="absolute top-4 right-4 flex gap-2 pointer-events-auto">
                     <button
-                      onClick={() => deleteCoupon(coupon.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/create-coupon?edit=${coupon.id}`);
+                      }}
+                      className="w-10 h-10 bg-blue-500/90 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-blue-600/90 transition-colors"
+                      title="Edit coupon"
+                    >
+                      <Edit className="w-5 h-5 text-white" />
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteCoupon(coupon.id);
+                      }}
                       className="w-10 h-10 bg-rose-500/90 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-rose-600/90 transition-colors"
                       title="Delete coupon"
                     >
@@ -243,6 +278,18 @@ const ManageCoupons = () => {
           )}
         </div>
       </main>
+
+      {/* Image Modal */}
+      {selectedImage && (
+        <ImageModal
+          open={!!selectedImage}
+          onOpenChange={(open) => !open && setSelectedImage(null)}
+          imageUrl={selectedImage.url}
+          title={selectedImage.title}
+          blurLevel="none"
+          description={selectedImage.description}
+        />
+      )}
     </div>
   );
 };

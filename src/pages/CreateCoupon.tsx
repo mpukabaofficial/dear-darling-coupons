@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,12 +33,15 @@ interface Profile {
 }
 
 const CreateCoupon = () => {
+  const [searchParams] = useSearchParams();
+  const editId = searchParams.get('edit');
   const [profile, setProfile] = useState<Profile | null>(null);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [isSurprise, setIsSurprise] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [existingImageUrl, setExistingImageUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [errors, setErrors] = useState<{ title?: string; description?: string }>({});
   const navigate = useNavigate();
@@ -47,6 +50,12 @@ const CreateCoupon = () => {
   useEffect(() => {
     checkAuth();
   }, []);
+
+  useEffect(() => {
+    if (editId && profile) {
+      loadCouponData();
+    }
+  }, [editId, profile]);
 
   const checkAuth = async () => {
     const { data: { session } } = await supabase.auth.getSession();
@@ -70,6 +79,45 @@ const CreateCoupon = () => {
           variant: "destructive",
         });
       }
+    }
+  };
+
+  const loadCouponData = async () => {
+    if (!editId) return;
+
+    const { data, error } = await supabase
+      .from("coupons")
+      .select("*")
+      .eq("id", editId)
+      .single();
+
+    if (error || !data) {
+      toast({
+        title: "Error",
+        description: "Could not load coupon data",
+        variant: "destructive",
+      });
+      navigate("/manage-coupons");
+      return;
+    }
+
+    // Only allow editing if user created this coupon
+    if (data.created_by !== profile?.id) {
+      toast({
+        title: "Not authorized",
+        description: "You can only edit coupons you created",
+        variant: "destructive",
+      });
+      navigate("/manage-coupons");
+      return;
+    }
+
+    setTitle(data.title);
+    setDescription(data.description || "");
+    setIsSurprise(data.is_surprise);
+    if (data.image_url) {
+      setExistingImageUrl(data.image_url);
+      setImagePreview(data.image_url);
     }
   };
 
@@ -97,6 +145,7 @@ const CreateCoupon = () => {
   const removeImage = () => {
     setImageFile(null);
     setImagePreview(null);
+    setExistingImageUrl(null);
   };
 
   const useTemplate = (template: typeof templates[0]) => {
@@ -128,7 +177,7 @@ const CreateCoupon = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Validate inputs
     try {
       couponSchema.parse({ title, description });
@@ -148,7 +197,7 @@ const CreateCoupon = () => {
 
     if (!profile?.partner_id) {
       toast({
-        title: "Cannot create coupon",
+        title: editId ? "Cannot update coupon" : "Cannot create coupon",
         description: "You need to link with your partner first",
         variant: "destructive",
       });
@@ -158,33 +207,53 @@ const CreateCoupon = () => {
     setUploading(true);
 
     try {
-      // Upload image if present
-      let imageUrl: string | null = null;
+      // Upload new image if present, otherwise keep existing
+      let imageUrl: string | null = existingImageUrl;
       if (imageFile) {
         imageUrl = await uploadImage();
       }
 
-      // Create coupon
-      const { error } = await supabase.from("coupons").insert({
-        title: title.trim(),
-        description: description.trim() || null,
-        is_surprise: isSurprise,
-        image_url: imageUrl,
-        created_by: profile.id,
-        for_partner: profile.partner_id,
-      });
+      if (editId) {
+        // Update existing coupon
+        const { error } = await supabase
+          .from("coupons")
+          .update({
+            title: title.trim(),
+            description: description.trim() || null,
+            is_surprise: isSurprise,
+            image_url: imageUrl,
+          })
+          .eq("id", editId);
 
-      if (error) throw error;
+        if (error) throw error;
 
-      toast({
-        title: "Coupon created! 💕",
-        description: "Your partner will love this surprise!",
-      });
+        toast({
+          title: "Coupon updated! 💕",
+          description: "Your changes have been saved!",
+        });
+      } else {
+        // Create new coupon
+        const { error } = await supabase.from("coupons").insert({
+          title: title.trim(),
+          description: description.trim() || null,
+          is_surprise: isSurprise,
+          image_url: imageUrl,
+          created_by: profile.id,
+          for_partner: profile.partner_id,
+        });
 
-      navigate("/home");
+        if (error) throw error;
+
+        toast({
+          title: "Coupon created! 💕",
+          description: "Your partner will love this surprise!",
+        });
+      }
+
+      navigate("/manage-coupons");
     } catch (error: any) {
       toast({
-        title: "Error creating coupon",
+        title: editId ? "Error updating coupon" : "Error creating coupon",
         description: error.message,
         variant: "destructive",
       });
@@ -200,12 +269,12 @@ const CreateCoupon = () => {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => navigate("/home")}
+            onClick={() => navigate(editId ? "/manage-coupons" : "/home")}
             className="rounded-full"
           >
             <ArrowLeft className="w-5 h-5" />
           </Button>
-          <h1 className="text-xl font-bold">Create Coupon</h1>
+          <h1 className="text-xl font-bold">{editId ? "Edit Coupon" : "Create Coupon"}</h1>
         </div>
       </header>
 
@@ -328,7 +397,7 @@ const CreateCoupon = () => {
             <Button
               type="button"
               variant="outline"
-              onClick={() => navigate("/home")}
+              onClick={() => navigate(editId ? "/manage-coupons" : "/home")}
               className="flex-1 rounded-full h-12"
             >
               Cancel
@@ -338,7 +407,13 @@ const CreateCoupon = () => {
               disabled={uploading || !profile?.partner_id}
               className="flex-1 rounded-full h-12 shadow-soft"
             >
-              {uploading ? "Creating..." : "Create Coupon"}
+              {uploading
+                ? editId
+                  ? "Updating..."
+                  : "Creating..."
+                : editId
+                ? "Update Coupon"
+                : "Create Coupon"}
             </Button>
           </div>
 
