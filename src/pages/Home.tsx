@@ -2,10 +2,11 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Heart, LogOut, Calendar, Smile, Settings, List, Gift, ChevronLeft, ChevronRight, Plus } from "lucide-react";
+import { Heart, LogOut, Calendar, Smile, Settings, List, Gift, ChevronLeft, ChevronRight, Plus, Shuffle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import CouponGrid from "@/components/CouponGrid";
 import MoodCheck from "@/components/MoodCheck";
+import RandomCouponPicker from "@/components/RandomCouponPicker";
 import { useNotifications } from "@/hooks/useNotifications";
 
 interface Profile {
@@ -15,6 +16,14 @@ interface Profile {
   relationship_start_date: string | null;
 }
 
+interface Coupon {
+  id: string;
+  title: string;
+  description: string | null;
+  image_url: string | null;
+  is_surprise: boolean;
+}
+
 const Home = () => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -22,6 +31,8 @@ const Home = () => {
   const [unredeemedCount, setUnredeemedCount] = useState(0);
   const [currentStatIndex, setCurrentStatIndex] = useState(0);
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [showRandomPicker, setShowRandomPicker] = useState(false);
+  const [availableCoupons, setAvailableCoupons] = useState<Coupon[]>([]);
   const navigate = useNavigate();
   const { toast } = useToast();
   const { getUnredeemedCount } = useNotifications(profile?.id);
@@ -53,6 +64,53 @@ const Home = () => {
   const fetchUnredeemedCount = async () => {
     const count = await getUnredeemedCount();
     setUnredeemedCount(count);
+  };
+
+  const fetchAvailableCoupons = async () => {
+    if (!profile?.id) return;
+
+    const { data, error } = await supabase
+      .from("coupons")
+      .select("id, title, description, image_url, is_surprise")
+      .eq("recipient_id", profile.id)
+      .is("redeemed_at", null)
+      .order("created_at", { ascending: false });
+
+    if (!error && data) {
+      setAvailableCoupons(data);
+    }
+  };
+
+  const handleRandomCouponRedeem = async (coupon: Coupon) => {
+    const { error } = await supabase
+      .from("coupons")
+      .update({ redeemed_at: new Date().toISOString() })
+      .eq("id", coupon.id);
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to redeem coupon",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    toast({
+      title: "Coupon Redeemed! 🎉",
+      description: coupon.is_surprise
+        ? "Your surprise has been revealed!"
+        : `You redeemed: ${coupon.title}`,
+    });
+
+    // Refresh the coupons
+    fetchAvailableCoupons();
+    fetchUnredeemedCount();
+  };
+
+  const handleSurpriseMeClick = () => {
+    fetchAvailableCoupons();
+    setShowRandomPicker(true);
   };
 
   const checkUser = async () => {
@@ -338,6 +396,16 @@ const Home = () => {
           <div className="flex items-center justify-between">
             <h2 className="text-2xl font-bold">Your Coupons</h2>
             <div className="flex gap-2">
+              {profile?.partner_id && unredeemedCount > 0 && (
+                <Button
+                  variant="default"
+                  onClick={handleSurpriseMeClick}
+                  className="rounded-full shadow-soft flex items-center gap-2 md:px-4 px-3 bg-gradient-to-r from-primary to-accent"
+                >
+                  <Shuffle className="w-4 h-4" />
+                  <span className="hidden md:inline">Surprise Me!</span>
+                </Button>
+              )}
               <Button
                 variant="outline"
                 onClick={() => navigate("/manage-coupons")}
@@ -370,6 +438,14 @@ const Home = () => {
           </Button>
         </div>
       </main>
+
+      {/* Random Coupon Picker Modal */}
+      <RandomCouponPicker
+        open={showRandomPicker}
+        onOpenChange={setShowRandomPicker}
+        coupons={availableCoupons}
+        onRedeem={handleRandomCouponRedeem}
+      />
     </div>
   );
 };
