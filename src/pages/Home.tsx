@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Heart, LogOut, Calendar, Smile, Settings, List, Gift, ChevronLeft, ChevronRight, Plus, Shuffle, Star, TrendingUp } from "lucide-react";
+import { Heart, LogOut, Calendar, Smile, Settings, List, Gift, ChevronLeft, ChevronRight, Plus, Shuffle, Star, TrendingUp, X, Clock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import CouponGrid from "@/components/CouponGrid";
 import MoodCheck from "@/components/MoodCheck";
@@ -12,6 +12,7 @@ import { useNotifications } from "@/hooks/useNotifications";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { useFavorites } from "@/hooks/useFavorites";
 import { AnimatedNumber } from "@/components/AnimatedNumber";
+import { useRedemptionReminder } from "@/hooks/useRedemptionReminder";
 
 interface Profile {
   id: string;
@@ -49,6 +50,7 @@ const Home = () => {
   const { toast } = useToast();
   const { getUnredeemedCount } = useNotifications(profile?.id);
   const { favorites } = useFavorites();
+  const { daysSinceLastRedemption, showReminder, dismissReminder, checkLastRedemption } = useRedemptionReminder(profile?.id);
 
   // Keyboard shortcuts
   useKeyboardShortcuts({
@@ -194,6 +196,7 @@ const Home = () => {
     fetchAvailableCoupons();
     fetchUnredeemedCount();
     fetchCouponStats();
+    checkLastRedemption();
   };
 
   const handleSurpriseMeClick = () => {
@@ -426,6 +429,34 @@ const Home = () => {
           </div>
         )}
 
+        {/* Redemption Reminder */}
+        {profile?.partner_id && showReminder && daysSinceLastRedemption !== null && (
+          <div className="bg-gradient-to-br from-accent to-soft-pink rounded-3xl p-6 shadow-soft relative">
+            <button
+              onClick={dismissReminder}
+              className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 transition-colors flex items-center justify-center"
+              aria-label="Dismiss reminder"
+            >
+              <X className="w-4 h-4 text-white" />
+            </button>
+            <div className="flex items-start gap-4 pr-8">
+              <Clock className="w-8 h-8 text-primary mt-1" />
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold mb-2">
+                  It's Been {daysSinceLastRedemption} {daysSinceLastRedemption === 1 ? 'Day' : 'Days'} Since Your Last Redemption 🕐
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  {unredeemedCount > 0 ? (
+                    <>You have {unredeemedCount} {unredeemedCount === 1 ? 'coupon' : 'coupons'} waiting! Time to treat yourself to something special.</>
+                  ) : (
+                    <>How about creating some special moments? Ask your partner for a new coupon!</>
+                  )}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Coupon Counter Stats */}
         {profile?.partner_id && (
           <div className="grid grid-cols-3 gap-4">
@@ -536,6 +567,7 @@ const Home = () => {
                     fetchFavoriteCoupons();
                     fetchUnredeemedCount();
                     fetchCouponStats();
+                    checkLastRedemption();
                   }}
                 />
               ))}
@@ -576,7 +608,10 @@ const Home = () => {
             </div>
           </div>
 
-          {profile && <CouponGrid userId={profile.id} onRedeemed={fetchCouponStats} />}
+          {profile && <CouponGrid userId={profile.id} onRedeemed={() => {
+            fetchCouponStats();
+            checkLastRedemption();
+          }} />}
         </div>
 
         {/* History and Insights Links */}
