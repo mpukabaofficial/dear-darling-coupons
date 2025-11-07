@@ -251,8 +251,11 @@ const Settings = () => {
 
   if (!profile) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-pink-50 flex items-center justify-center">
-        <div className="text-pink-600">Loading...</div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-pulse flex flex-col items-center gap-4">
+          <Heart className="w-12 h-12 text-primary animate-bounce" fill="currentColor" />
+          <p className="text-muted-foreground">Loading settings...</p>
+        </div>
       </div>
     );
   }
