@@ -144,7 +144,9 @@ const ManageCoupons = () => {
         .order("redeemed_at", { ascending: false });
 
       if (redeemed) {
-        setRedeemedCoupons(redeemed as RedeemedCoupon[]);
+        // Filter out any redeemed coupons where the coupon data is null
+        const validRedeemed = redeemed.filter((r: any) => r.coupons !== null);
+        setRedeemedCoupons(validRedeemed as RedeemedCoupon[]);
       }
     }
 
@@ -432,7 +434,7 @@ const ManageCoupons = () => {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {redeemedCoupons.map((redeemed) => (
+                {redeemedCoupons.filter(r => r.coupons).map((redeemed) => (
                   <Card
                     key={redeemed.id}
                     className="group relative aspect-[3/4] overflow-hidden rounded-3xl shadow-soft hover:shadow-glow transition-all border-2"
@@ -440,7 +442,7 @@ const ManageCoupons = () => {
                     <div
                       className="w-full h-full cursor-pointer"
                       onClick={() => {
-                        if (redeemed.coupons.image_url) {
+                        if (redeemed.coupons?.image_url) {
                           setSelectedImage({
                             url: redeemed.coupons.image_url,
                             title: redeemed.coupons.title,
@@ -449,7 +451,7 @@ const ManageCoupons = () => {
                         }
                       }}
                     >
-                      {redeemed.coupons.image_url ? (
+                      {redeemed.coupons?.image_url ? (
                         <img
                           src={redeemed.coupons.image_url}
                           alt={redeemed.coupons.title}
@@ -467,8 +469,8 @@ const ManageCoupons = () => {
                           <span className="text-white text-xs font-medium">Redeemed</span>
                         </div>
                       </div>
-                      <h3 className="text-white font-bold text-xl mb-2">{redeemed.coupons.title}</h3>
-                      {redeemed.coupons.description && (
+                      <h3 className="text-white font-bold text-xl mb-2">{redeemed.coupons?.title}</h3>
+                      {redeemed.coupons?.description && (
                         <p className="text-white/90 text-sm line-clamp-2">
                           {redeemed.coupons.description}
                         </p>
@@ -521,7 +523,7 @@ const ManageCoupons = () => {
             </DialogDescription>
           </DialogHeader>
 
-          {redemptionToReverse && (
+          {redemptionToReverse && redemptionToReverse.coupons && (
             <div className="space-y-2 py-4">
               <h4 className="font-semibold">{redemptionToReverse.coupons.title}</h4>
               {redemptionToReverse.coupons.description && (
