@@ -11,7 +11,7 @@ export interface DailyRedemption {
     id: string;
     title: string;
     description: string;
-    surprise: boolean;
+    is_surprise: boolean;
   };
 }
 
@@ -74,7 +74,7 @@ export const useDailyRedemptions = (userId: string | undefined) => {
             id,
             title,
             description,
-            surprise
+            is_surprise
           )
         `)
         .eq('redeemed_by', userId)
@@ -103,7 +103,7 @@ export const useDailyRedemptions = (userId: string | undefined) => {
               id,
               title,
               description,
-              surprise
+              is_surprise
             )
           `)
           .eq('redeemed_by', profile.partner_id)
