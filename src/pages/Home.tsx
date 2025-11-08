@@ -235,9 +235,10 @@ const Home = () => {
       .eq("for_partner", profile.id)
       .eq("created_by", profile.partner_id);
 
+    let availableCount = 0;
     if (availableCoupons) {
       const availableIds = availableCoupons.map(c => c.id);
-      
+
       if (availableIds.length > 0) {
         const { data: redeemed } = await supabase
           .from("redeemed_coupons")
@@ -246,10 +247,7 @@ const Home = () => {
 
         const redeemedIds = new Set(redeemed?.map(r => r.coupon_id) || []);
         const unredeemed = availableIds.filter(id => !redeemedIds.has(id));
-        
-        setCouponStats(prev => ({ ...prev, available: unredeemed.length }));
-      } else {
-        setCouponStats(prev => ({ ...prev, available: 0 }));
+        availableCount = unredeemed.length;
       }
     }
 
@@ -266,7 +264,7 @@ const Home = () => {
       .eq("created_by", profile.id);
 
     setCouponStats({
-      available: couponStats.available,
+      available: availableCount,
       redeemed: redeemedData?.length || 0,
       totalCreated: createdData?.length || 0,
     });

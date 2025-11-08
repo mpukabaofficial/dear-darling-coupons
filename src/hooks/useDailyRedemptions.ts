@@ -51,10 +51,10 @@ export const useDailyRedemptions = (userId: string | undefined) => {
 
       if (profileError) throw profileError;
 
-      // Get today's date in YYYY-MM-DD format (consistent with rest of app)
-      const today = new Date().toISOString().split('T')[0];
+      // Calculate 24 hours ago from now (simpler and timezone-safe)
+      const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
 
-      // Fetch today's redemption for current user
+      // Fetch today's redemption for current user (last 24 hours)
       const { data: myRedemptionData, error: myError } = await supabase
         .from('redeemed_coupons')
         .select(`
@@ -71,8 +71,7 @@ export const useDailyRedemptions = (userId: string | undefined) => {
           )
         `)
         .eq('redeemed_by', userId)
-        .gte('redeemed_at', `${today}T00:00:00`)
-        .lte('redeemed_at', `${today}T23:59:59`)
+        .gte('redeemed_at', twentyFourHoursAgo)
         .order('redeemed_at', { ascending: false })
         .limit(1)
         .maybeSingle();
@@ -98,8 +97,7 @@ export const useDailyRedemptions = (userId: string | undefined) => {
             )
           `)
           .eq('redeemed_by', profile.partner_id)
-          .gte('redeemed_at', `${today}T00:00:00`)
-          .lte('redeemed_at', `${today}T23:59:59`)
+          .gte('redeemed_at', twentyFourHoursAgo)
           .order('redeemed_at', { ascending: false })
           .limit(1)
           .maybeSingle();
