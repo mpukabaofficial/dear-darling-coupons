@@ -30,8 +30,8 @@ const DailyRedemptionBadges = ({ userId, refreshTrigger }: DailyRedemptionBadges
 
   if (loading) {
     return (
-      <div className="w-full animate-fade-in">
-        <div className="flex items-center justify-center gap-3">
+      <div className="w-auto mx-auto animate-fade-in">
+        <div className="flex items-center gap-3">
           <div className="w-12 h-12 rounded-full bg-muted animate-pulse" />
           <div className="w-24 h-4 rounded bg-muted animate-pulse" />
           <div className="w-12 h-12 rounded-full bg-muted animate-pulse" />
@@ -47,8 +47,8 @@ const DailyRedemptionBadges = ({ userId, refreshTrigger }: DailyRedemptionBadges
 
   return (
     <>
-      <div className="w-full animate-fade-in">
-        <div className="flex items-center justify-center gap-3">
+      <div className="w-auto mx-auto animate-fade-in">
+        <div className="flex items-center gap-3">
           {/* Partner's Badge (Left) */}
           <button
             onClick={() => handleBadgeClick(partnerRedemption, true)}
