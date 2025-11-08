@@ -39,12 +39,14 @@ const Home = () => {
   const [loading, setLoading] = useState(true);
   const [daysTogeth, setDaysTogether] = useState(0);
   const [unredeemedCount, setUnredeemedCount] = useState(0);
+  const [hasRedeemedToday, setHasRedeemedToday] = useState(false);
   const [currentStatIndex, setCurrentStatIndex] = useState(0);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [showRandomPicker, setShowRandomPicker] = useState(false);
   const [availableCoupons, setAvailableCoupons] = useState<Coupon[]>([]);
   const [favoriteCoupons, setFavoriteCoupons] = useState<Coupon[]>([]);
   const [redeemedCoupon, setRedeemedCoupon] = useState<Coupon | null>(null);
+  const [dailyBadgeRefreshTrigger, setDailyBadgeRefreshTrigger] = useState(0);
   const [couponStats, setCouponStats] = useState({
     available: 0,
     redeemed: 0,
@@ -105,21 +107,34 @@ const Home = () => {
     }
   }, [profile?.id]);
 
-  // Show toast when there are unredeemed coupons
+  // Show toast when there are unredeemed coupons (but only if user hasn't redeemed today)
   useEffect(() => {
-    if (profile?.partner_id && unredeemedCount > 0) {
+    if (profile?.partner_id && unredeemedCount > 0 && !hasRedeemedToday) {
       toast({
         title: `${unredeemedCount} ${unredeemedCount === 1 ? 'Coupon' : 'Coupons'} Waiting! 🎁`,
         description: `Your partner created ${unredeemedCount === 1 ? 'a special coupon' : 'special coupons'} just for you.`,
       });
     }
-  }, [unredeemedCount, profile?.partner_id]);
+  }, [unredeemedCount, profile?.partner_id, hasRedeemedToday]);
 
   const fetchUnredeemedCount = async () => {
     if (!profile?.partner_id) {
       setUnredeemedCount(0);
+      setHasRedeemedToday(false);
       return;
     }
+
+    // Check if user has redeemed today
+    const today = new Date().toISOString().split('T')[0];
+    const { data: todayRedemptions } = await supabase
+      .from("redeemed_coupons")
+      .select("id")
+      .eq("redeemed_by", profile.id)
+      .gte("redeemed_at", `${today}T00:00:00`)
+      .lte("redeemed_at", `${today}T23:59:59`)
+      .limit(1);
+
+    setHasRedeemedToday((todayRedemptions?.length || 0) > 0);
 
     const { data: coupons } = await supabase
       .from("coupons")
@@ -130,7 +145,7 @@ const Home = () => {
     if (coupons) {
       // Filter out redeemed coupons
       const couponIds = coupons.map(c => c.id);
-      
+
       if (couponIds.length === 0) {
         setUnredeemedCount(0);
         return;
@@ -610,8 +625,8 @@ const Home = () => {
 
         {/* Daily Redemption Badges */}
         {profile?.partner_id && profile.id && (
-          <div className="bg-gradient-to-br from-muted/30 to-muted/10 rounded-3xl p-6 shadow-soft animate-slide-up">
-            <DailyRedemptionBadges userId={profile.id} />
+          <div className="bg-gradient-to-br from-muted/30 to-muted/10 rounded-2xl p-3 shadow-sm animate-slide-up">
+            <DailyRedemptionBadges userId={profile.id} refreshTrigger={dailyBadgeRefreshTrigger} />
           </div>
         )}
 
@@ -688,6 +703,7 @@ const Home = () => {
                     fetchUnredeemedCount();
                     fetchCouponStats();
                     checkLastRedemption();
+                    setDailyBadgeRefreshTrigger(prev => prev + 1);
                   }}
                 />
               ))}
@@ -731,6 +747,7 @@ const Home = () => {
           {profile && <CouponGrid userId={profile.id} onRedeemed={() => {
             fetchCouponStats();
             checkLastRedemption();
+            setDailyBadgeRefreshTrigger(prev => prev + 1);
           }} />}
         </div>
 

@@ -51,10 +51,8 @@ export const useDailyRedemptions = (userId: string | undefined) => {
 
       if (profileError) throw profileError;
 
-      // Get today's date range
-      const now = new Date();
-      const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+      // Get today's date in YYYY-MM-DD format (consistent with rest of app)
+      const today = new Date().toISOString().split('T')[0];
 
       // Fetch today's redemption for current user
       const { data: myRedemptionData, error: myError } = await supabase
@@ -73,8 +71,8 @@ export const useDailyRedemptions = (userId: string | undefined) => {
           )
         `)
         .eq('redeemed_by', userId)
-        .gte('redeemed_at', startOfDay.toISOString())
-        .lte('redeemed_at', endOfDay.toISOString())
+        .gte('redeemed_at', `${today}T00:00:00`)
+        .lte('redeemed_at', `${today}T23:59:59`)
         .order('redeemed_at', { ascending: false })
         .limit(1)
         .maybeSingle();
@@ -100,8 +98,8 @@ export const useDailyRedemptions = (userId: string | undefined) => {
             )
           `)
           .eq('redeemed_by', profile.partner_id)
-          .gte('redeemed_at', startOfDay.toISOString())
-          .lte('redeemed_at', endOfDay.toISOString())
+          .gte('redeemed_at', `${today}T00:00:00`)
+          .lte('redeemed_at', `${today}T23:59:59`)
           .order('redeemed_at', { ascending: false })
           .limit(1)
           .maybeSingle();
