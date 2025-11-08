@@ -16,6 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useFavorites } from "@/hooks/useFavorites";
 import confetti from "canvas-confetti";
 import ImageModal from "@/components/ImageModal";
+import ShareCardModal from "@/components/ShareCardModal";
 
 interface Coupon {
   id: string;
@@ -36,8 +37,10 @@ const CouponCard = ({ coupon, onRedeemed }: CouponCardProps) => {
   const [showConfirm, setShowConfirm] = useState(false);
   const [showReveal, setShowReveal] = useState(false);
   const [showImageModal, setShowImageModal] = useState(false);
+  const [showShareCard, setShowShareCard] = useState(false);
   const [reflection, setReflection] = useState("");
   const [redeeming, setRedeeming] = useState(false);
+  const [redemptionTimestamp, setRedemptionTimestamp] = useState<string>("");
   const { toast } = useToast();
   const { toggleFavorite, isFavorite } = useFavorites();
 
@@ -123,11 +126,15 @@ const CouponCard = ({ coupon, onRedeemed }: CouponCardProps) => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) return;
 
-    const { error } = await supabase.from("redeemed_coupons").insert({
-      coupon_id: coupon.id,
-      redeemed_by: session.user.id,
-      reflection_note: reflection || null,
-    });
+    const { data: redemptionData, error } = await supabase
+      .from("redeemed_coupons")
+      .insert({
+        coupon_id: coupon.id,
+        redeemed_by: session.user.id,
+        reflection_note: reflection || null,
+      })
+      .select()
+      .single();
 
     if (error) {
       toast({
@@ -137,6 +144,11 @@ const CouponCard = ({ coupon, onRedeemed }: CouponCardProps) => {
       });
       setRedeeming(false);
       return;
+    }
+
+    // Store redemption timestamp for the share card
+    if (redemptionData?.redeemed_at) {
+      setRedemptionTimestamp(redemptionData.redeemed_at);
     }
 
     // Keep the coupon for history (don't delete it)
@@ -157,11 +169,8 @@ const CouponCard = ({ coupon, onRedeemed }: CouponCardProps) => {
       // For non-surprise coupons with images, show the image modal
       setShowImageModal(true);
     } else {
-      toast({
-        title: "Coupon redeemed! 🎉",
-        description: "Enjoy your special treat!",
-      });
-      onRedeemed();
+      // For text-only coupons, show the share card modal immediately
+      setShowShareCard(true);
     }
 
     setRedeeming(false);
@@ -169,7 +178,8 @@ const CouponCard = ({ coupon, onRedeemed }: CouponCardProps) => {
 
   const handleRevealClose = () => {
     setShowReveal(false);
-    onRedeemed();
+    // Show the share card modal after closing the reveal dialog
+    setShowShareCard(true);
   };
 
   return (
@@ -357,7 +367,8 @@ const CouponCard = ({ coupon, onRedeemed }: CouponCardProps) => {
           onOpenChange={(open) => {
             setShowImageModal(open);
             if (!open) {
-              onRedeemed();
+              // Show the share card modal after closing the image modal
+              setShowShareCard(true);
             }
           }}
           imageUrl={coupon.image_url}
@@ -366,6 +377,28 @@ const CouponCard = ({ coupon, onRedeemed }: CouponCardProps) => {
           blurLevel="none"
         />
       )}
+
+      {/* Share Card Modal */}
+      <ShareCardModal
+        open={showShareCard}
+        onOpenChange={(open) => {
+          setShowShareCard(open);
+          if (!open) {
+            // Call onRedeemed when share modal is closed
+            onRedeemed();
+            // Reset reflection and timestamp
+            setReflection("");
+            setRedemptionTimestamp("");
+          }
+        }}
+        couponData={{
+          title: coupon.title,
+          description: coupon.description,
+          imageUrl: coupon.image_url,
+          redeemedAt: redemptionTimestamp || new Date().toISOString(),
+          reflectionNote: reflection,
+        }}
+      />
     </>
   );
 };

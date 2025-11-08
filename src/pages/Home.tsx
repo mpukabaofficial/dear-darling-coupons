@@ -105,6 +105,16 @@ const Home = () => {
     }
   }, [profile?.id]);
 
+  // Show toast when there are unredeemed coupons
+  useEffect(() => {
+    if (profile?.partner_id && unredeemedCount > 0) {
+      toast({
+        title: `${unredeemedCount} ${unredeemedCount === 1 ? 'Coupon' : 'Coupons'} Waiting! 🎁`,
+        description: `Your partner created ${unredeemedCount === 1 ? 'a special coupon' : 'special coupons'} just for you.`,
+      });
+    }
+  }, [unredeemedCount, profile?.partner_id]);
+
   const fetchUnredeemedCount = async () => {
     if (!profile?.partner_id) {
       setUnredeemedCount(0);
@@ -510,9 +520,9 @@ const Home = () => {
               <Heart className="w-5 h-5 text-white" fill="currentColor" />
             </div>
             <div className="flex items-center gap-2">
-              <h1 className="text-xl font-bold hidden md:block">Love Coupons</h1>
+              <h1 className="text-xl font-bold hidden sm:block">Love Coupons</h1>
               {profile?.partner_id && (
-                <div className="flex items-center gap-1 ml-2 hidden md:flex">
+                <div className="flex items-center gap-1 ml-2">
                   <Heart className="w-4 h-4 text-primary animate-pulse" fill="currentColor" />
                   <div className="flex items-center gap-0.5">
                     <div className="w-1 h-1 bg-primary rounded-full animate-pulse"></div>
@@ -570,24 +580,6 @@ const Home = () => {
           </div>
         )}
 
-        {/* Unredeemed Coupons Alert */}
-        {profile?.partner_id && unredeemedCount > 0 && (
-          <div className="bg-gradient-to-br from-lavender to-accent rounded-3xl p-6 shadow-soft animate-pulse-subtle animate-gradient animate-slide-up">
-            <div className="flex items-start gap-4">
-              <Gift className="w-8 h-8 text-primary mt-1" />
-              <div className="flex-1">
-                <h3 className="text-lg font-semibold mb-2">
-                  {unredeemedCount} {unredeemedCount === 1 ? 'Coupon' : 'Coupons'} Waiting for You! 🎁
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                  Your partner created {unredeemedCount === 1 ? 'a special coupon' : 'special coupons'} just for you.
-                  Scroll down to redeem {unredeemedCount === 1 ? 'it' : 'them'}!
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* Redemption Reminder */}
         {profile?.partner_id && showReminder && daysSinceLastRedemption !== null && (
           <div className="bg-gradient-to-br from-accent to-soft-pink rounded-3xl p-6 shadow-soft relative animate-gradient animate-slide-up">
@@ -620,44 +612,6 @@ const Home = () => {
         {profile?.partner_id && profile.id && (
           <div className="bg-gradient-to-br from-muted/30 to-muted/10 rounded-3xl p-6 shadow-soft animate-slide-up">
             <DailyRedemptionBadges userId={profile.id} />
-          </div>
-        )}
-
-        {/* Coupon Counter Stats */}
-        {profile?.partner_id && (
-          <div className="grid grid-cols-3 gap-4 animate-slide-up">
-            <div className="bg-gradient-to-br from-peach to-soft-pink p-6 rounded-3xl shadow-soft text-center hover-lift animate-gradient stagger-1">
-              <div className="flex items-center justify-center gap-2 mb-3">
-                <Gift className="w-5 h-5 text-primary" />
-                <p className="text-sm font-medium text-muted-foreground">Available</p>
-              </div>
-              <p className="text-4xl font-bold text-primary mb-1">
-                <AnimatedNumber value={couponStats.available} />
-              </p>
-              <p className="text-xs text-muted-foreground">Unredeemed</p>
-            </div>
-
-            <div className="bg-gradient-to-br from-lavender to-accent p-6 rounded-3xl shadow-soft text-center hover-lift animate-gradient stagger-2">
-              <div className="flex items-center justify-center gap-2 mb-3">
-                <Heart className="w-5 h-5 text-primary" fill="currentColor" />
-                <p className="text-sm font-medium text-muted-foreground">Redeemed</p>
-              </div>
-              <p className="text-4xl font-bold text-primary mb-1">
-                <AnimatedNumber value={couponStats.redeemed} />
-              </p>
-              <p className="text-xs text-muted-foreground">Enjoyed</p>
-            </div>
-
-            <div className="bg-gradient-to-br from-soft-pink to-lavender p-6 rounded-3xl shadow-soft text-center hover-lift animate-gradient stagger-3">
-              <div className="flex items-center justify-center gap-2 mb-3">
-                <Plus className="w-5 h-5 text-primary" />
-                <p className="text-sm font-medium text-muted-foreground">Created</p>
-              </div>
-              <p className="text-4xl font-bold text-primary mb-1">
-                <AnimatedNumber value={couponStats.totalCreated} />
-              </p>
-              <p className="text-xs text-muted-foreground">Total Given</p>
-            </div>
           </div>
         )}
 
@@ -779,6 +733,44 @@ const Home = () => {
             checkLastRedemption();
           }} />}
         </div>
+
+        {/* Coupon Counter Stats */}
+        {profile?.partner_id && (
+          <div className="grid grid-cols-3 gap-4 animate-slide-up">
+            <div className="bg-gradient-to-br from-peach to-soft-pink p-6 rounded-3xl shadow-soft text-center hover-lift animate-gradient stagger-1">
+              <div className="flex items-center justify-center gap-2 mb-3">
+                <Gift className="w-5 h-5 text-primary" />
+                <p className="text-sm font-medium text-muted-foreground">Available</p>
+              </div>
+              <p className="text-4xl font-bold text-primary mb-1">
+                <AnimatedNumber value={couponStats.available} />
+              </p>
+              <p className="text-xs text-muted-foreground">Unredeemed</p>
+            </div>
+
+            <div className="bg-gradient-to-br from-lavender to-accent p-6 rounded-3xl shadow-soft text-center hover-lift animate-gradient stagger-2">
+              <div className="flex items-center justify-center gap-2 mb-3">
+                <Heart className="w-5 h-5 text-primary" fill="currentColor" />
+                <p className="text-sm font-medium text-muted-foreground">Redeemed</p>
+              </div>
+              <p className="text-4xl font-bold text-primary mb-1">
+                <AnimatedNumber value={couponStats.redeemed} />
+              </p>
+              <p className="text-xs text-muted-foreground">Enjoyed</p>
+            </div>
+
+            <div className="bg-gradient-to-br from-soft-pink to-lavender p-6 rounded-3xl shadow-soft text-center hover-lift animate-gradient stagger-3">
+              <div className="flex items-center justify-center gap-2 mb-3">
+                <Plus className="w-5 h-5 text-primary" />
+                <p className="text-sm font-medium text-muted-foreground">Created</p>
+              </div>
+              <p className="text-4xl font-bold text-primary mb-1">
+                <AnimatedNumber value={couponStats.totalCreated} />
+              </p>
+              <p className="text-xs text-muted-foreground">Total Given</p>
+            </div>
+          </div>
+        )}
 
         {/* History and Insights Links */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
