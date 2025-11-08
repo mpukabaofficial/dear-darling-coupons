@@ -124,14 +124,17 @@ const Home = () => {
       return;
     }
 
-    // Check if user has redeemed today
-    const today = new Date().toISOString().split('T')[0];
+    // Check if user has redeemed today (using local timezone)
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+    const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+
     const { data: todayRedemptions } = await supabase
       .from("redeemed_coupons")
       .select("id")
       .eq("redeemed_by", profile.id)
-      .gte("redeemed_at", `${today}T00:00:00`)
-      .lte("redeemed_at", `${today}T23:59:59`)
+      .gte("redeemed_at", startOfToday.toISOString())
+      .lte("redeemed_at", endOfToday.toISOString())
       .limit(1);
 
     setHasRedeemedToday((todayRedemptions?.length || 0) > 0);
