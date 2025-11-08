@@ -9,11 +9,11 @@ import MoodCheck from "@/components/MoodCheck";
 import RandomCouponPicker from "@/components/RandomCouponPicker";
 import CouponCard from "@/components/CouponCard";
 import ImageModal from "@/components/ImageModal";
-import { useNotifications } from "@/hooks/useNotifications";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { useFavorites } from "@/hooks/useFavorites";
 import { AnimatedNumber } from "@/components/AnimatedNumber";
 import { useRedemptionReminder } from "@/hooks/useRedemptionReminder";
+import { NotificationBell } from "@/components/NotificationBell";
 import confetti from "canvas-confetti";
 
 interface Profile {
@@ -29,8 +29,8 @@ interface Coupon {
   description: string | null;
   image_url: string | null;
   is_surprise: boolean;
-  created_by?: string;
-  for_partner?: string;
+  created_by: string;
+  for_partner: string;
 }
 
 const Home = () => {
@@ -51,7 +51,6 @@ const Home = () => {
   });
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { getUnredeemedCount } = useNotifications(profile?.id);
   const { favorites } = useFavorites();
   const { daysSinceLastRedemption, showReminder, dismissReminder, checkLastRedemption } = useRedemptionReminder(profile?.id);
 
@@ -106,53 +105,127 @@ const Home = () => {
   }, [profile?.id]);
 
   const fetchUnredeemedCount = async () => {
-    const count = await getUnredeemedCount();
-    setUnredeemedCount(count);
-  };
+    if (!profile?.partner_id) {
+      setUnredeemedCount(0);
+      return;
+    }
 
-  const fetchAvailableCoupons = async () => {
-    if (!profile?.id) return;
-
-    const { data, error } = await supabase
+    const { data: coupons } = await supabase
       .from("coupons")
-      .select("id, title, description, image_url, is_surprise")
-      .eq("recipient_id", profile.id)
-      .is("redeemed_at", null)
-      .order("created_at", { ascending: false });
+      .select("id")
+      .eq("created_by", profile.partner_id)
+      .eq("for_partner", profile.id);
 
-    if (!error && data) {
-      setAvailableCoupons(data);
+    if (coupons) {
+      // Filter out redeemed coupons
+      const couponIds = coupons.map(c => c.id);
+      
+      if (couponIds.length === 0) {
+        setUnredeemedCount(0);
+        return;
+      }
+
+      const { data: redeemed } = await supabase
+        .from("redeemed_coupons")
+        .select("coupon_id")
+        .in("coupon_id", couponIds);
+
+      const redeemedIds = new Set(redeemed?.map(r => r.coupon_id) || []);
+      const unredeemed = couponIds.filter(id => !redeemedIds.has(id));
+      setUnredeemedCount(unredeemed.length);
     }
   };
 
-  const fetchFavoriteCoupons = async () => {
-    if (!profile?.id || favorites.length === 0) return;
+  const fetchAvailableCoupons = async () => {
+    if (!profile?.id || !profile?.partner_id) return;
 
     const { data, error } = await supabase
       .from("coupons")
       .select("id, title, description, image_url, is_surprise, created_by, for_partner")
-      .eq("recipient_id", profile.id)
-      .is("redeemed_at", null)
+      .eq("for_partner", profile.id)
+      .eq("created_by", profile.partner_id)
+      .order("created_at", { ascending: false });
+
+    if (!error && data) {
+      // Filter out redeemed coupons
+      const couponIds = data.map(c => c.id);
+      
+      if (couponIds.length > 0) {
+        const { data: redeemed } = await supabase
+          .from("redeemed_coupons")
+          .select("coupon_id")
+          .in("coupon_id", couponIds);
+
+        const redeemedIds = new Set(redeemed?.map(r => r.coupon_id) || []);
+        const unredeemed = data.filter(c => !redeemedIds.has(c.id));
+        setAvailableCoupons(unredeemed);
+      } else {
+        setAvailableCoupons([]);
+      }
+    }
+  };
+
+  const fetchFavoriteCoupons = async () => {
+    if (!profile?.id || !profile?.partner_id || favorites.length === 0) return;
+
+    const { data, error } = await supabase
+      .from("coupons")
+      .select("id, title, description, image_url, is_surprise, created_by, for_partner")
+      .eq("for_partner", profile.id)
+      .eq("created_by", profile.partner_id)
       .in("id", favorites);
 
     if (!error && data) {
-      // Sort by favorites array order to maintain user's preferred order
-      const sorted = favorites
-        .map((favId) => data.find((coupon) => coupon.id === favId))
-        .filter((coupon): coupon is Coupon & { created_by: string; for_partner: string } => coupon !== undefined);
-      setFavoriteCoupons(sorted);
+      // Filter out redeemed coupons
+      const couponIds = data.map(c => c.id);
+      
+      if (couponIds.length > 0) {
+        const { data: redeemed } = await supabase
+          .from("redeemed_coupons")
+          .select("coupon_id")
+          .in("coupon_id", couponIds);
+
+        const redeemedIds = new Set(redeemed?.map(r => r.coupon_id) || []);
+        const unredeemed = data.filter(c => !redeemedIds.has(c.id));
+        
+        // Sort by favorites array order to maintain user's preferred order
+        const sorted = favorites
+          .map((favId) => unredeemed.find((coupon) => coupon.id === favId))
+          .filter((coupon): coupon is Coupon => coupon !== undefined);
+        setFavoriteCoupons(sorted);
+      } else {
+        setFavoriteCoupons([]);
+      }
     }
   };
 
   const fetchCouponStats = async () => {
-    if (!profile?.id) return;
+    if (!profile?.id || !profile?.partner_id) return;
 
-    // Fetch available coupons (unredeemed coupons for user)
-    const { data: availableData } = await supabase
+    // Fetch available coupons (unredeemed coupons for user from partner)
+    const { data: availableCoupons } = await supabase
       .from("coupons")
       .select("id")
-      .eq("recipient_id", profile.id)
-      .is("redeemed_at", null);
+      .eq("for_partner", profile.id)
+      .eq("created_by", profile.partner_id);
+
+    if (availableCoupons) {
+      const availableIds = availableCoupons.map(c => c.id);
+      
+      if (availableIds.length > 0) {
+        const { data: redeemed } = await supabase
+          .from("redeemed_coupons")
+          .select("coupon_id")
+          .in("coupon_id", availableIds);
+
+        const redeemedIds = new Set(redeemed?.map(r => r.coupon_id) || []);
+        const unredeemed = availableIds.filter(id => !redeemedIds.has(id));
+        
+        setCouponStats(prev => ({ ...prev, available: unredeemed.length }));
+      } else {
+        setCouponStats(prev => ({ ...prev, available: 0 }));
+      }
+    }
 
     // Fetch redeemed coupons (by user)
     const { data: redeemedData } = await supabase
@@ -167,7 +240,7 @@ const Home = () => {
       .eq("created_by", profile.id);
 
     setCouponStats({
-      available: availableData?.length || 0,
+      available: couponStats.available,
       redeemed: redeemedData?.length || 0,
       totalCreated: createdData?.length || 0,
     });
@@ -451,6 +524,7 @@ const Home = () => {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <NotificationBell />
             <Button
               variant="ghost"
               size="icon"

@@ -157,23 +157,25 @@ const ManageCoupons = () => {
     // Schedule the delete
     scheduleDelete(couponId);
 
-    // Show toast with undo action
-    const { dismiss } = toast({
+    toast({
       title: "Coupon scheduled for deletion",
       description: "This coupon will be permanently deleted in 30 seconds.",
-      duration: 30000, // Show for 30 seconds
-      action: {
-        label: "Undo",
-        onClick: () => {
-          // Undo the delete
-          undoDelete(couponId);
-          toast({
-            title: "Delete cancelled",
-            description: "Your coupon has been restored.",
-          });
-          dismiss();
-        },
-      },
+      duration: 30000,
+      action: (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => {
+            undoDelete(couponId);
+            toast({
+              title: "Deletion cancelled",
+              description: "Your coupon has been restored.",
+            });
+          }}
+        >
+          Undo
+        </Button>
+      ),
     });
   };
 

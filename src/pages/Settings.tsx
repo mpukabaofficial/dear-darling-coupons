@@ -135,10 +135,11 @@ const Settings = () => {
         return;
       }
 
-      if (!data?.success) {
+      const result = data as { success: boolean; error?: string };
+      if (!result?.success) {
         toast({
           title: "Error",
-          description: data?.error || "Failed to link with partner",
+          description: result?.error || "Failed to link with partner",
           variant: "destructive",
         });
         setIsLinking(false);
@@ -185,10 +186,11 @@ const Settings = () => {
         return;
       }
 
-      if (!data?.success) {
+      const result = data as { success: boolean; error?: string };
+      if (!result?.success) {
         toast({
           title: "Error",
-          description: data?.error || "Failed to unlink partner",
+          description: result?.error || "Failed to unlink partner",
           variant: "destructive",
         });
         return;
