@@ -1,18 +1,26 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useDailyRedemptions, DailyRedemption } from "@/hooks/useDailyRedemptions";
 import RedemptionDetailModal from "./RedemptionDetailModal";
 import { Heart, Sparkles } from "lucide-react";
 
 interface DailyRedemptionBadgesProps {
   userId: string;
+  refreshTrigger?: number;
 }
 
-const DailyRedemptionBadges = ({ userId }: DailyRedemptionBadgesProps) => {
-  const { myRedemption, partnerRedemption, loading } = useDailyRedemptions(userId);
+const DailyRedemptionBadges = ({ userId, refreshTrigger }: DailyRedemptionBadgesProps) => {
+  const { myRedemption, partnerRedemption, loading, refresh } = useDailyRedemptions(userId);
   const [selectedRedemption, setSelectedRedemption] = useState<{
     redemption: DailyRedemption;
     isPartner: boolean;
   } | null>(null);
+
+  // Refresh when refreshTrigger changes (e.g., after a redemption)
+  useEffect(() => {
+    if (refreshTrigger !== undefined) {
+      refresh();
+    }
+  }, [refreshTrigger]);
 
   const handleBadgeClick = (redemption: DailyRedemption | null, isPartner: boolean) => {
     if (redemption) {
@@ -23,140 +31,65 @@ const DailyRedemptionBadges = ({ userId }: DailyRedemptionBadgesProps) => {
   if (loading) {
     return (
       <div className="w-full animate-fade-in">
-        <div className="flex items-center justify-center gap-4 p-6">
-          {/* Partner Badge Skeleton */}
-          <div className="w-32 h-32 rounded-full bg-muted animate-pulse" />
-
-          {/* My Badge Skeleton */}
-          <div className="w-32 h-32 rounded-full bg-muted animate-pulse" />
+        <div className="flex items-center justify-center gap-3">
+          <div className="w-12 h-12 rounded-full bg-muted animate-pulse" />
+          <div className="w-24 h-4 rounded bg-muted animate-pulse" />
+          <div className="w-12 h-12 rounded-full bg-muted animate-pulse" />
         </div>
       </div>
     );
   }
 
+  // Hide the entire component if there are no redemptions for today
+  if (!myRedemption && !partnerRedemption) {
+    return null;
+  }
+
   return (
     <>
       <div className="w-full animate-fade-in">
-        <div className="text-center mb-4">
-          <h3 className="text-sm font-medium text-muted-foreground flex items-center justify-center gap-2">
-            <Sparkles className="w-4 h-4 text-primary" />
-            Today's shared moments
-            <Sparkles className="w-4 h-4 text-primary" />
-          </h3>
-        </div>
-
-        <div className="flex items-center justify-center gap-6 sm:gap-8 p-4">
+        <div className="flex items-center justify-center gap-3">
           {/* Partner's Badge (Left) */}
           <button
             onClick={() => handleBadgeClick(partnerRedemption, true)}
             disabled={!partnerRedemption}
             className={`
-              group relative w-28 h-28 sm:w-32 sm:h-32 rounded-full
-              transition-all duration-300 ease-out
+              group relative w-12 h-12 rounded-full
+              transition-all duration-200 ease-out
               ${
                 partnerRedemption
-                  ? "bg-gradient-to-br from-lavender to-accent shadow-soft hover:shadow-glow hover:-translate-y-1 cursor-pointer"
-                  : "bg-muted/30 border-2 border-dashed border-border/40"
+                  ? "bg-gradient-to-br from-lavender to-accent shadow-sm hover:shadow-md hover:scale-110 cursor-pointer"
+                  : "bg-muted/20 border border-dashed border-border/30 cursor-default opacity-50"
               }
-              ${!partnerRedemption && "cursor-default"}
             `}
-            aria-label={partnerRedemption ? "View partner's redemption" : "Partner hasn't redeemed today"}
+            title={partnerRedemption ? "View partner's redemption" : "Partner hasn't redeemed today"}
           >
-            {/* Active State */}
-            {partnerRedemption && (
-              <div className="flex flex-col items-center justify-center h-full relative">
-                {/* Sparkle effect on hover */}
-                <div className="absolute inset-0 rounded-full bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-
-                <Heart className="w-8 h-8 text-primary fill-primary mb-2 animate-pulse-subtle relative z-10" />
-                <span className="text-xs font-medium text-foreground relative z-10">Their moment</span>
-                <span className="text-[10px] text-muted-foreground mt-1 relative z-10">
-                  {new Date(partnerRedemption.redeemed_at).toLocaleTimeString("en-US", {
-                    hour: "numeric",
-                    minute: "2-digit",
-                  })}
-                </span>
-              </div>
-            )}
-
-            {/* Inactive State */}
-            {!partnerRedemption && (
-              <div className="flex flex-col items-center justify-center h-full">
-                <Heart className="w-8 h-8 text-muted-foreground/30 mb-2" />
-                <span className="text-xs text-muted-foreground/50">Not yet</span>
-              </div>
-            )}
-
-            {/* Gentle pulse animation when active */}
-            {partnerRedemption && (
-              <div className="absolute inset-0 rounded-full bg-lavender/20 animate-ping opacity-20" />
-            )}
+            <div className="flex items-center justify-center h-full">
+              <Heart className={`w-5 h-5 ${partnerRedemption ? 'text-primary fill-primary' : 'text-muted-foreground/30'}`} />
+            </div>
           </button>
 
-          {/* Connection Line */}
-          <div className="flex items-center gap-1">
-            <div className="w-1 h-1 rounded-full bg-primary/40 animate-pulse" />
-            <div className="w-1 h-1 rounded-full bg-primary/40 animate-pulse" style={{ animationDelay: "0.2s" }} />
-            <div className="w-1 h-1 rounded-full bg-primary/40 animate-pulse" style={{ animationDelay: "0.4s" }} />
-          </div>
+          <span className="text-xs text-muted-foreground/60">Today's moments</span>
 
           {/* My Badge (Right) */}
           <button
             onClick={() => handleBadgeClick(myRedemption, false)}
             disabled={!myRedemption}
             className={`
-              group relative w-28 h-28 sm:w-32 sm:h-32 rounded-full
-              transition-all duration-300 ease-out
+              group relative w-12 h-12 rounded-full
+              transition-all duration-200 ease-out
               ${
                 myRedemption
-                  ? "bg-gradient-to-br from-peach to-soft-pink shadow-soft hover:shadow-glow hover:-translate-y-1 cursor-pointer"
-                  : "bg-muted/30 border-2 border-dashed border-border/40"
+                  ? "bg-gradient-to-br from-peach to-soft-pink shadow-sm hover:shadow-md hover:scale-110 cursor-pointer"
+                  : "bg-muted/20 border border-dashed border-border/30 cursor-default opacity-50"
               }
-              ${!myRedemption && "cursor-default"}
             `}
-            aria-label={myRedemption ? "View your redemption" : "You haven't redeemed today"}
+            title={myRedemption ? "View your redemption" : "You haven't redeemed today"}
           >
-            {/* Active State */}
-            {myRedemption && (
-              <div className="flex flex-col items-center justify-center h-full relative">
-                {/* Sparkle effect on hover */}
-                <div className="absolute inset-0 rounded-full bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-
-                <Heart className="w-8 h-8 text-primary fill-primary mb-2 animate-pulse-subtle relative z-10" />
-                <span className="text-xs font-medium text-foreground relative z-10">Your moment</span>
-                <span className="text-[10px] text-muted-foreground mt-1 relative z-10">
-                  {new Date(myRedemption.redeemed_at).toLocaleTimeString("en-US", {
-                    hour: "numeric",
-                    minute: "2-digit",
-                  })}
-                </span>
-              </div>
-            )}
-
-            {/* Inactive State */}
-            {!myRedemption && (
-              <div className="flex flex-col items-center justify-center h-full">
-                <Heart className="w-8 h-8 text-muted-foreground/30 mb-2" />
-                <span className="text-xs text-muted-foreground/50">Not yet</span>
-              </div>
-            )}
-
-            {/* Gentle pulse animation when active */}
-            {myRedemption && (
-              <div className="absolute inset-0 rounded-full bg-peach/20 animate-ping opacity-20" />
-            )}
+            <div className="flex items-center justify-center h-full">
+              <Heart className={`w-5 h-5 ${myRedemption ? 'text-primary fill-primary' : 'text-muted-foreground/30'}`} />
+            </div>
           </button>
-        </div>
-
-        {/* Gentle subtitle */}
-        <div className="text-center mt-4">
-          <p className="text-xs text-muted-foreground/60 italic">
-            {myRedemption && partnerRedemption
-              ? "You're both here today ✨"
-              : myRedemption || partnerRedemption
-              ? "A moment has been shared today"
-              : "No moments redeemed yet today"}
-          </p>
         </div>
       </div>
 
