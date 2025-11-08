@@ -4,7 +4,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Heart, ArrowLeft, Trash2, Plus, Sparkles, Edit } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Heart, ArrowLeft, Trash2, Plus, Sparkles, Edit, RotateCcw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import ImageModal from "@/components/ImageModal";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
@@ -50,6 +58,9 @@ const ManageCoupons = () => {
     title: string;
     description?: string;
   } | null>(null);
+  const [showReverseConfirm, setShowReverseConfirm] = useState(false);
+  const [redemptionToReverse, setRedemptionToReverse] = useState<RedeemedCoupon | null>(null);
+  const [reversing, setReversing] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
   const { scheduleDelete, undoDelete, isPendingDelete, getExpiredDeletes } = useSoftDelete();
@@ -133,7 +144,9 @@ const ManageCoupons = () => {
         .order("redeemed_at", { ascending: false });
 
       if (redeemed) {
-        setRedeemedCoupons(redeemed as RedeemedCoupon[]);
+        // Filter out any redeemed coupons where the coupon data is null
+        const validRedeemed = redeemed.filter((r: any) => r.coupons !== null);
+        setRedeemedCoupons(validRedeemed as RedeemedCoupon[]);
       }
     }
 
@@ -162,6 +175,44 @@ const ManageCoupons = () => {
         },
       },
     });
+  };
+
+  const handleReverseRedemptionClick = (redeemed: RedeemedCoupon) => {
+    setRedemptionToReverse(redeemed);
+    setShowReverseConfirm(true);
+  };
+
+  const confirmReverseRedemption = async () => {
+    if (!redemptionToReverse) return;
+
+    setReversing(true);
+
+    const { error } = await supabase
+      .from("redeemed_coupons")
+      .delete()
+      .eq("id", redemptionToReverse.id);
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+      setReversing(false);
+      return;
+    }
+
+    toast({
+      title: "Redemption reversed! ✨",
+      description: "The coupon is now available for redemption again.",
+    });
+
+    // Refresh the coupons
+    await checkUserAndFetchCoupons();
+
+    setShowReverseConfirm(false);
+    setRedemptionToReverse(null);
+    setReversing(false);
   };
 
   if (loading) {
@@ -383,7 +434,7 @@ const ManageCoupons = () => {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {redeemedCoupons.map((redeemed) => (
+                {redeemedCoupons.filter(r => r.coupons).map((redeemed) => (
                   <Card
                     key={redeemed.id}
                     className="group relative aspect-[3/4] overflow-hidden rounded-3xl shadow-soft hover:shadow-glow transition-all border-2"
@@ -391,7 +442,7 @@ const ManageCoupons = () => {
                     <div
                       className="w-full h-full cursor-pointer"
                       onClick={() => {
-                        if (redeemed.coupons.image_url) {
+                        if (redeemed.coupons?.image_url) {
                           setSelectedImage({
                             url: redeemed.coupons.image_url,
                             title: redeemed.coupons.title,
@@ -400,7 +451,7 @@ const ManageCoupons = () => {
                         }
                       }}
                     >
-                      {redeemed.coupons.image_url ? (
+                      {redeemed.coupons?.image_url ? (
                         <img
                           src={redeemed.coupons.image_url}
                           alt={redeemed.coupons.title}
@@ -418,8 +469,8 @@ const ManageCoupons = () => {
                           <span className="text-white text-xs font-medium">Redeemed</span>
                         </div>
                       </div>
-                      <h3 className="text-white font-bold text-xl mb-2">{redeemed.coupons.title}</h3>
-                      {redeemed.coupons.description && (
+                      <h3 className="text-white font-bold text-xl mb-2">{redeemed.coupons?.title}</h3>
+                      {redeemed.coupons?.description && (
                         <p className="text-white/90 text-sm line-clamp-2">
                           {redeemed.coupons.description}
                         </p>
@@ -427,6 +478,20 @@ const ManageCoupons = () => {
                       <p className="text-white/80 text-xs mt-2">
                         Redeemed {new Date(redeemed.redeemed_at).toLocaleDateString()}
                       </p>
+                    </div>
+
+                    {/* Reverse Redemption Button */}
+                    <div className="absolute top-4 right-4 pointer-events-auto">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleReverseRedemptionClick(redeemed);
+                        }}
+                        className="w-10 h-10 bg-amber-500/90 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-amber-600/90 transition-colors"
+                        title="Reverse redemption"
+                      >
+                        <RotateCcw className="w-5 h-5 text-white" />
+                      </button>
                     </div>
                   </Card>
                 ))}
@@ -447,6 +512,57 @@ const ManageCoupons = () => {
           description={selectedImage.description}
         />
       )}
+
+      {/* Reverse Redemption Confirmation Dialog */}
+      <Dialog open={showReverseConfirm} onOpenChange={setShowReverseConfirm}>
+        <DialogContent className="rounded-3xl">
+          <DialogHeader>
+            <DialogTitle>Reverse Redemption?</DialogTitle>
+            <DialogDescription>
+              This will make the coupon available for redemption again. Are you sure you want to reverse this redemption?
+            </DialogDescription>
+          </DialogHeader>
+
+          {redemptionToReverse && redemptionToReverse.coupons && (
+            <div className="space-y-2 py-4">
+              <h4 className="font-semibold">{redemptionToReverse.coupons.title}</h4>
+              {redemptionToReverse.coupons.description && (
+                <p className="text-sm text-muted-foreground">{redemptionToReverse.coupons.description}</p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                Redeemed on {new Date(redemptionToReverse.redeemed_at).toLocaleDateString()}
+              </p>
+              {redemptionToReverse.reflection_note && (
+                <div className="mt-3 p-3 bg-muted rounded-lg">
+                  <p className="text-xs font-medium mb-1">Partner's reflection:</p>
+                  <p className="text-sm">{redemptionToReverse.reflection_note}</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowReverseConfirm(false);
+                setRedemptionToReverse(null);
+              }}
+              disabled={reversing}
+              className="rounded-full"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={confirmReverseRedemption}
+              disabled={reversing}
+              className="rounded-full bg-amber-500 hover:bg-amber-600"
+            >
+              {reversing ? "Reversing..." : "Reverse Redemption"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
