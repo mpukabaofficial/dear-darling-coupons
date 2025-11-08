@@ -14,6 +14,7 @@ import { useFavorites } from "@/hooks/useFavorites";
 import { AnimatedNumber } from "@/components/AnimatedNumber";
 import { useRedemptionReminder } from "@/hooks/useRedemptionReminder";
 import { NotificationBell } from "@/components/NotificationBell";
+import DailyRedemptionBadges from "@/components/DailyRedemptionBadges";
 import confetti from "canvas-confetti";
 
 interface Profile {
@@ -612,6 +613,13 @@ const Home = () => {
                 </p>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Daily Redemption Badges */}
+        {profile?.partner_id && profile.id && (
+          <div className="bg-gradient-to-br from-muted/30 to-muted/10 rounded-3xl p-6 shadow-soft animate-slide-up">
+            <DailyRedemptionBadges userId={profile.id} />
           </div>
         )}
 
