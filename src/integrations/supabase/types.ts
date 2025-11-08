@@ -170,7 +170,8 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      link_partners: { Args: { partner_email: string }; Returns: Json }
+      unlink_partner: { Args: never; Returns: Json }
     }
     Enums: {
       [_ in never]: never
