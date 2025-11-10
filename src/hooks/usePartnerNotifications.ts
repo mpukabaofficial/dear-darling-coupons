@@ -2,14 +2,22 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
-interface Notification {
+export interface Notification {
   id: string;
   type: string;
   title: string;
   message: string;
   related_coupon_id: string | null;
   read: boolean;
+  read_at: string | null;
   created_at: string;
+  metadata?: {
+    coupon_title?: string;
+    is_surprise?: boolean;
+    image_url?: string;
+    redeemer_email?: string;
+    redemption_id?: string;
+  };
 }
 
 export const usePartnerNotifications = () => {
@@ -39,8 +47,14 @@ export const usePartnerNotifications = () => {
     }
 
     if (data) {
-      setNotifications(data);
-      setUnreadCount(data.filter(n => !n.read).length);
+      // Cast the data to our Notification type
+      const typedNotifications = data.map(n => ({
+        ...n,
+        metadata: n.metadata as Notification['metadata']
+      })) as Notification[];
+      
+      setNotifications(typedNotifications);
+      setUnreadCount(typedNotifications.filter(n => !n.read).length);
     }
   };
 
@@ -55,7 +69,10 @@ export const usePartnerNotifications = () => {
           table: "notifications",
         },
         (payload) => {
-          const newNotification = payload.new as Notification;
+          const newNotification = {
+            ...payload.new,
+            metadata: payload.new.metadata as Notification['metadata']
+          } as Notification;
           
           // Add to notifications list
           setNotifications(prev => [newNotification, ...prev]);
@@ -77,9 +94,13 @@ export const usePartnerNotifications = () => {
   };
 
   const markAsRead = async (notificationId: string) => {
+    const now = new Date().toISOString();
     const { error } = await supabase
       .from("notifications")
-      .update({ read: true })
+      .update({ 
+        read: true,
+        read_at: now
+      })
       .eq("id", notificationId);
 
     if (error) {
@@ -88,7 +109,7 @@ export const usePartnerNotifications = () => {
     }
 
     setNotifications(prev =>
-      prev.map(n => (n.id === notificationId ? { ...n, read: true } : n))
+      prev.map(n => (n.id === notificationId ? { ...n, read: true, read_at: now } : n))
     );
     setUnreadCount(prev => Math.max(0, prev - 1));
   };
@@ -97,9 +118,13 @@ export const usePartnerNotifications = () => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) return;
 
+    const now = new Date().toISOString();
     const { error } = await supabase
       .from("notifications")
-      .update({ read: true })
+      .update({ 
+        read: true,
+        read_at: now
+      })
       .eq("user_id", session.user.id)
       .eq("read", false);
 
@@ -108,7 +133,7 @@ export const usePartnerNotifications = () => {
       return;
     }
 
-    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    setNotifications(prev => prev.map(n => ({ ...n, read: true, read_at: n.read_at || now })));
     setUnreadCount(0);
   };
 

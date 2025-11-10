@@ -99,7 +99,9 @@ export type Database = {
           created_at: string | null
           id: string
           message: string
+          metadata: Json | null
           read: boolean | null
+          read_at: string | null
           related_coupon_id: string | null
           title: string
           type: string
@@ -109,7 +111,9 @@ export type Database = {
           created_at?: string | null
           id?: string
           message: string
+          metadata?: Json | null
           read?: boolean | null
+          read_at?: string | null
           related_coupon_id?: string | null
           title: string
           type: string
@@ -119,7 +123,9 @@ export type Database = {
           created_at?: string | null
           id?: string
           message?: string
+          metadata?: Json | null
           read?: boolean | null
+          read_at?: string | null
           related_coupon_id?: string | null
           title?: string
           type?: string
@@ -147,6 +153,7 @@ export type Database = {
           created_at: string | null
           email: string
           id: string
+          notification_preferences: Json | null
           partner_id: string | null
           relationship_start_date: string | null
         }
@@ -154,6 +161,7 @@ export type Database = {
           created_at?: string | null
           email: string
           id: string
+          notification_preferences?: Json | null
           partner_id?: string | null
           relationship_start_date?: string | null
         }
@@ -161,6 +169,7 @@ export type Database = {
           created_at?: string | null
           email?: string
           id?: string
+          notification_preferences?: Json | null
           partner_id?: string | null
           relationship_start_date?: string | null
         }

@@ -1,4 +1,4 @@
-import { Bell } from "lucide-react";
+import { Bell, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Popover,
@@ -7,11 +7,10 @@ import {
 } from "@/components/ui/popover";
 import { usePartnerNotifications } from "@/hooks/usePartnerNotifications";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { formatDistanceToNow } from "date-fns";
-import { cn } from "@/lib/utils";
+import NotificationItem from "./NotificationItem";
 
 export const NotificationBell = () => {
-  const { notifications, unreadCount, markAsRead, markAllAsRead } = usePartnerNotifications();
+  const { notifications, unreadCount, markAsRead, markAllAsRead, refreshNotifications } = usePartnerNotifications();
 
   return (
     <Popover>
@@ -25,60 +24,57 @@ export const NotificationBell = () => {
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-80 p-0" align="end">
-        <div className="flex items-center justify-between p-4 border-b">
+      <PopoverContent className="w-96 p-0" align="end">
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 py-3 border-b">
           <h3 className="font-semibold">Notifications</h3>
           {unreadCount > 0 && (
             <Button
               variant="ghost"
               size="sm"
               onClick={markAllAsRead}
-              className="text-xs h-auto py-1 px-2"
+              className="h-7 text-xs"
             >
+              <Check className="w-3 h-3 mr-1" />
               Mark all read
             </Button>
           )}
         </div>
-        <ScrollArea className="h-[400px]">
-          {notifications.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
-              <Bell className="h-12 w-12 mb-2 opacity-50" />
-              <p className="text-sm">No notifications yet</p>
-            </div>
-          ) : (
-            <div className="divide-y">
-              {notifications.map((notification) => (
-                <div
-                  key={notification.id}
-                  className={cn(
-                    "p-4 hover:bg-accent cursor-pointer transition-colors",
-                    !notification.read && "bg-accent/50"
-                  )}
-                  onClick={() => !notification.read && markAsRead(notification.id)}
-                >
-                  <div className="flex items-start gap-3">
-                    <div className="flex-1 space-y-1">
-                      <p className="text-sm font-medium leading-none">
-                        {notification.title}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        {notification.message}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {formatDistanceToNow(new Date(notification.created_at), {
-                          addSuffix: true,
-                        })}
-                      </p>
-                    </div>
-                    {!notification.read && (
-                      <div className="h-2 w-2 rounded-full bg-primary mt-1" />
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </ScrollArea>
+
+        {/* Notifications List */}
+        {notifications.length === 0 ? (
+          <div className="p-8 text-center">
+            <Bell className="w-12 h-12 mx-auto mb-3 text-muted-foreground/40" />
+            <p className="text-sm text-muted-foreground">No notifications yet</p>
+            <p className="text-xs text-muted-foreground/60 mt-1">
+              You'll be notified when your partner creates or redeems coupons
+            </p>
+          </div>
+        ) : (
+          <ScrollArea className="h-[400px]">
+            {notifications.map((notification) => (
+              <NotificationItem
+                key={notification.id}
+                notification={notification}
+                onMarkAsRead={markAsRead}
+              />
+            ))}
+          </ScrollArea>
+        )}
+
+        {/* Footer */}
+        {notifications.length > 0 && (
+          <div className="border-t p-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={refreshNotifications}
+              className="w-full text-xs"
+            >
+              Refresh notifications
+            </Button>
+          </div>
+        )}
       </PopoverContent>
     </Popover>
   );
