@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useDarkMode } from "@/hooks/useDarkMode";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
+import NotificationPreferences from "@/components/NotificationPreferences";
 
 interface Profile {
   id: string;
@@ -442,6 +443,9 @@ const Settings = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Notification Preferences Section */}
+        {profile?.partner_id && <NotificationPreferences userId={profile.id} />}
 
         {/* Account Section */}
         <Card className="rounded-3xl shadow-soft">
