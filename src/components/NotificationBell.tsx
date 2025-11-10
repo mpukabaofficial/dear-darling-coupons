@@ -1,3 +1,5 @@
+
+import { useState } from "react";
 import { Bell, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -7,6 +9,19 @@ import {
 } from "@/components/ui/popover";
 import { usePartnerNotifications } from "@/hooks/usePartnerNotifications";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { formatDistanceToNow } from "date-fns";
+import { cn } from "@/lib/utils";
+import { CouponDetailModal } from "@/components/CouponDetailModal";
+
+export const NotificationBell = () => {
+  const { notifications, unreadCount, markAsRead, markAllAsRead } = usePartnerNotifications();
+  const [selectedCouponId, setSelectedCouponId] = useState<string | null>(null);
+  const [showCouponModal, setShowCouponModal] = useState(false);
+
+  const handleViewCoupon = (couponId: string) => {
+    setSelectedCouponId(couponId);
+    setShowCouponModal(true);
+  };
 import NotificationItem from "./NotificationItem";
 
 export const NotificationBell = () => {
@@ -40,6 +55,66 @@ export const NotificationBell = () => {
             </Button>
           )}
         </div>
+        <ScrollArea className="h-[400px]">
+          {notifications.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
+              <Bell className="h-12 w-12 mb-2 opacity-50" />
+              <p className="text-sm">No notifications yet</p>
+            </div>
+          ) : (
+            <div className="divide-y">
+              {notifications.map((notification) => (
+                <div
+                  key={notification.id}
+                  className={cn(
+                    "p-4 transition-colors",
+                    !notification.read && "bg-accent/50"
+                  )}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="flex-1 space-y-2">
+                      <div
+                        className="space-y-1 cursor-pointer hover:opacity-80"
+                        onClick={() => !notification.read && markAsRead(notification.id)}
+                      >
+                        <p className="text-sm font-medium leading-none">
+                          {notification.title}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {notification.message}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {formatDistanceToNow(new Date(notification.created_at), {
+                            addSuffix: true,
+                          })}
+                        </p>
+                      </div>
+                      {notification.related_coupon_id && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-8 rounded-full text-xs"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleViewCoupon(notification.related_coupon_id!);
+                            if (!notification.read) {
+                              markAsRead(notification.id);
+                            }
+                          }}
+                        >
+                          View Coupon
+                        </Button>
+                      )}
+                    </div>
+                    {!notification.read && (
+                      <div className="h-2 w-2 rounded-full bg-primary mt-1 flex-shrink-0" />
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </ScrollArea>
 
         {/* Notifications List */}
         {notifications.length === 0 ? (
@@ -76,6 +151,11 @@ export const NotificationBell = () => {
           </div>
         )}
       </PopoverContent>
+      <CouponDetailModal
+        open={showCouponModal}
+        onOpenChange={setShowCouponModal}
+        couponId={selectedCouponId}
+      />
     </Popover>
   );
 };
