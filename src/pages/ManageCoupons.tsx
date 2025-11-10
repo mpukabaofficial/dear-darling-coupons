@@ -228,8 +228,14 @@ const ManageCoupons = () => {
     );
   }
 
-  // Filter out coupons pending deletion
-  const visibleCoupons = createdCoupons.filter((coupon) => !isPendingDelete(coupon.id));
+  // Get IDs of redeemed coupons
+  const redeemedCouponIds = new Set(redeemedCoupons.map((r) => r.coupon_id));
+
+  // Filter out coupons pending deletion AND coupons that have been redeemed
+  // Active tab should only show unredeemed coupons
+  const visibleCoupons = createdCoupons.filter(
+    (coupon) => !isPendingDelete(coupon.id) && !redeemedCouponIds.has(coupon.id)
+  );
 
   return (
     <div className="min-h-screen pb-20">
