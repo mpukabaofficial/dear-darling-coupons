@@ -170,12 +170,6 @@ const NotificationPreferencesComponent = ({ userId }: NotificationPreferencesPro
             onCheckedChange={(checked) => updatePreference("sound_enabled", checked)}
           />
         </div>
-
-        <div className="pt-4 border-t">
-          <p className="text-xs text-muted-foreground">
-            💡 Tip: You can always access your notifications by clicking the bell icon in the header
-          </p>
-        </div>
       </CardContent>
     </Card>
   );
