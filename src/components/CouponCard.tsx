@@ -82,15 +82,20 @@ const CouponCard = ({ coupon, onRedeemed }: CouponCardProps) => {
       return false;
     }
 
-    // Check daily redemption limit
-    const today = new Date().toISOString().split('T')[0];
+    // Check daily redemption limit - use local timezone to determine "today"
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+    const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+
+    const startOfTodayUTC = startOfToday.toISOString();
+    const endOfTodayUTC = endOfToday.toISOString();
 
     const { data, error } = await supabase
       .from("redeemed_coupons")
       .select("*")
       .eq("redeemed_by", session.user.id)
-      .gte("redeemed_at", `${today}T00:00:00`)
-      .lte("redeemed_at", `${today}T23:59:59`);
+      .gte("redeemed_at", startOfTodayUTC)
+      .lte("redeemed_at", endOfTodayUTC);
 
     if (error) {
       toast({
