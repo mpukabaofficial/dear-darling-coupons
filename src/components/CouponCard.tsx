@@ -17,6 +17,7 @@ import { useFavorites } from "@/hooks/useFavorites";
 import confetti from "canvas-confetti";
 import ImageModal from "@/components/ImageModal";
 import ShareCardModal from "@/components/ShareCardModal";
+import ProtectedImage from "@/components/ProtectedImage";
 
 interface Coupon {
   id: string;
@@ -195,10 +196,11 @@ const CouponCard = ({ coupon, onRedeemed }: CouponCardProps) => {
           onClick={handleRedeemClick}
         >
           {coupon.image_url ? (
-            <img
+            <ProtectedImage
               src={coupon.image_url}
               alt={coupon.title}
               className="w-full h-full object-cover blur-3xl transition-smooth"
+              showWatermark={false}
             />
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-peach via-soft-pink to-lavender animate-gradient-slow" />
@@ -339,10 +341,11 @@ const CouponCard = ({ coupon, onRedeemed }: CouponCardProps) => {
 
           <div className="space-y-4 py-6 text-center">
             {coupon.image_url && (
-              <img
+              <ProtectedImage
                 src={coupon.image_url}
                 alt={coupon.title}
                 className="w-full rounded-2xl"
+                showWatermark={true}
               />
             )}
             <h3 className="text-2xl font-bold text-primary">{coupon.title}</h3>
