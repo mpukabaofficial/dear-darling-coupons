@@ -5,18 +5,22 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Heart, Copy, Link2, UserX, Calendar, Moon, Sun } from "lucide-react";
+import { Heart, Copy, Link2, UserX, Calendar, Moon, Sun, User } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useDarkMode } from "@/hooks/useDarkMode";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import NotificationPreferences from "@/components/NotificationPreferences";
+import AvatarSelector from "@/components/AvatarSelector";
+import UserAvatar from "@/components/UserAvatar";
+import { findAvatarByUrl, getDefaultAvatar } from "@/data/avatars";
 
 interface Profile {
   id: string;
   email: string;
   partner_id: string | null;
   relationship_start_date: string | null;
+  avatar_url: string | null;
 }
 
 interface PartnerProfile {
@@ -30,6 +34,9 @@ const Settings = () => {
   const [relationshipStartDate, setRelationshipStartDate] = useState("");
   const [isLinking, setIsLinking] = useState(false);
   const [isUpdatingDate, setIsUpdatingDate] = useState(false);
+  const [selectedAvatarUrl, setSelectedAvatarUrl] = useState<string | null>(null);
+  const [isSavingAvatar, setIsSavingAvatar] = useState(false);
+  const [avatarError, setAvatarError] = useState<string | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
   const { isDarkMode, toggleDarkMode } = useDarkMode();
@@ -256,6 +263,48 @@ const Settings = () => {
     }
   };
 
+  const saveAvatar = async () => {
+    if (!profile || !selectedAvatarUrl) return;
+
+    setIsSavingAvatar(true);
+    setAvatarError(null);
+
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ avatar_url: selectedAvatarUrl })
+        .eq("id", profile.id);
+
+      if (error) {
+        setAvatarError("Failed to update avatar. Please try again.");
+        toast({
+          title: "Error",
+          description: "Failed to update avatar",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Update local profile state
+      setProfile({ ...profile, avatar_url: selectedAvatarUrl });
+      setSelectedAvatarUrl(null);
+
+      toast({
+        title: "Avatar Updated! ✨",
+        description: "Your new avatar has been saved successfully",
+      });
+    } catch (error) {
+      setAvatarError("An unexpected error occurred");
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSavingAvatar(false);
+    }
+  };
+
   const handleSignOut = async () => {
     await supabase.auth.signOut();
     navigate("/auth");
@@ -277,9 +326,7 @@ const Settings = () => {
       <header className="sticky top-0 bg-background/80 backdrop-blur-lg border-b border-border z-10">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-primary to-accent rounded-full flex items-center justify-center">
-              <Heart className="w-5 h-5 text-white" fill="currentColor" />
-            </div>
+            <UserAvatar avatarUrl={profile?.avatar_url} size="md" />
             <h1 className="text-xl font-bold">Settings</h1>
           </div>
           <Button variant="outline" onClick={() => navigate("/home")} className="rounded-full">
@@ -417,6 +464,68 @@ const Settings = () => {
             </CardContent>
           </Card>
         )}
+
+        {/* Avatar Selection Section */}
+        <Card className="rounded-3xl shadow-soft">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <User className="h-5 w-5" />
+              Choose Your Avatar
+            </CardTitle>
+            <CardDescription>
+              Pick an avatar to use wherever your profile appears. You can change this anytime.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Show current avatar if it's not one of the predefined 10 */}
+            {profile.avatar_url && !findAvatarByUrl(profile.avatar_url) && (
+              <div className="mb-4">
+                <Label className="text-sm text-muted-foreground mb-2 block">Current Avatar</Label>
+                <div className="flex items-center gap-3">
+                  <img
+                    src={profile.avatar_url}
+                    alt="Current avatar"
+                    className="w-16 h-16 rounded-full object-cover ring-2 ring-border"
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    You can choose one of the avatars below to replace this
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Avatar Selector */}
+            <AvatarSelector
+              currentAvatarUrl={profile.avatar_url}
+              selectedAvatarUrl={selectedAvatarUrl || undefined}
+              onAvatarChange={(url) => {
+                setSelectedAvatarUrl(url);
+                setAvatarError(null);
+              }}
+            />
+
+            {/* Error Message */}
+            {avatarError && (
+              <p className="text-sm text-destructive">{avatarError}</p>
+            )}
+
+            {/* Save Button */}
+            <Button
+              onClick={saveAvatar}
+              disabled={!selectedAvatarUrl || isSavingAvatar}
+              className="w-full rounded-full h-12"
+            >
+              {isSavingAvatar ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                  Saving...
+                </>
+              ) : (
+                "Save Avatar"
+              )}
+            </Button>
+          </CardContent>
+        </Card>
 
         {/* Appearance Section */}
         <Card className="rounded-3xl shadow-soft">
