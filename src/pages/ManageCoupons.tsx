@@ -12,11 +12,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Heart, ArrowLeft, Trash2, Plus, Sparkles, Edit, RotateCcw } from "lucide-react";
+import { Heart, ArrowLeft, Trash2, Plus, Sparkles, Edit, RotateCcw, ImageOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import ImageModal from "@/components/ImageModal";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { useSoftDelete } from "@/hooks/useSoftDelete";
+import ProtectedImage from "@/components/ProtectedImage";
 
 interface Coupon {
   id: string;
@@ -177,6 +178,31 @@ const ManageCoupons = () => {
         </Button>
       ),
     });
+  };
+
+  const deleteImage = async (couponId: string) => {
+    try {
+      const { error } = await supabase
+        .from("coupons")
+        .update({ image_url: null })
+        .eq("id", couponId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Image removed",
+        description: "The image has been removed from this coupon. The coupon text remains.",
+      });
+
+      // Refresh coupons
+      await checkUserAndFetchCoupons();
+    } catch (error: any) {
+      toast({
+        title: "Error removing image",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
   };
 
   const handleReverseRedemptionClick = (redeemed: RedeemedCoupon) => {
@@ -368,10 +394,11 @@ const ManageCoupons = () => {
                       }}
                     >
                       {coupon.image_url ? (
-                        <img
+                        <ProtectedImage
                           src={coupon.image_url}
                           alt={coupon.title}
                           className="w-full h-full object-cover"
+                          showWatermark={false}
                         />
                       ) : (
                         <div className="w-full h-full bg-gradient-to-br from-peach via-soft-pink to-lavender" />
@@ -399,6 +426,20 @@ const ManageCoupons = () => {
                     </div>
 
                     <div className="absolute top-4 right-4 flex gap-2 pointer-events-auto">
+                      {coupon.image_url && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (confirm("Are you sure you want to remove the image from this coupon? The coupon text will remain.")) {
+                              deleteImage(coupon.id);
+                            }
+                          }}
+                          className="w-10 h-10 bg-orange-500/90 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-orange-600/90 transition-colors"
+                          title="Remove image"
+                        >
+                          <ImageOff className="w-5 h-5 text-white" />
+                        </button>
+                      )}
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
@@ -460,10 +501,11 @@ const ManageCoupons = () => {
                       }}
                     >
                       {redeemed.coupons?.image_url ? (
-                        <img
+                        <ProtectedImage
                           src={redeemed.coupons.image_url}
                           alt={redeemed.coupons.title}
                           className="w-full h-full object-cover"
+                          showWatermark={true}
                         />
                       ) : (
                         <div className="w-full h-full bg-gradient-to-br from-peach via-soft-pink to-lavender" />

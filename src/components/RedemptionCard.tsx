@@ -1,5 +1,6 @@
 import { Heart, Sparkles } from "lucide-react";
 import { format } from "date-fns";
+import ProtectedImage from "./ProtectedImage";
 
 interface RedemptionCardProps {
   title: string;
@@ -52,11 +53,12 @@ const RedemptionCard = ({
         {/* Image */}
         {imageUrl && (
           <div className="relative rounded-2xl overflow-hidden bg-white/30 backdrop-blur-sm shadow-soft">
-            <img
+            <ProtectedImage
               src={imageUrl}
               alt={title}
               className="w-full h-auto object-cover"
               style={{ maxHeight: "240px" }}
+              showWatermark={true}
             />
           </div>
         )}

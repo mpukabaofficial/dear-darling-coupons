@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -8,6 +8,8 @@ import {
 } from "@/components/ui/dialog";
 import { Eye, EyeOff } from "lucide-react";
 import ProtectedImage from "./ProtectedImage";
+import { supabase } from "@/integrations/supabase/client";
+import { useScreenshotDetection } from "@/hooks/useImageAccessLog";
 
 interface ImageModalProps {
   open: boolean;
@@ -28,6 +30,47 @@ const ImageModal = ({
 }: ImageModalProps) => {
   const [isDescriptionLocked, setIsDescriptionLocked] = useState(false);
   const [isHovering, setIsHovering] = useState(false);
+
+  // Log suspicious activity when screenshot is detected
+  useScreenshotDetection(async () => {
+    if (open) {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          await supabase.from("image_access_logs").insert({
+            coupon_id: null, // We don't have coupon_id in ImageModal context
+            accessed_by: session.user.id,
+            access_type: "suspicious",
+            user_agent: navigator.userAgent,
+          });
+        }
+      } catch (error) {
+        console.error("Failed to log suspicious activity:", error);
+      }
+    }
+  });
+
+  // Log image view when modal opens
+  useEffect(() => {
+    if (open) {
+      const logView = async () => {
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session) {
+            await supabase.from("image_access_logs").insert({
+              coupon_id: null,
+              accessed_by: session.user.id,
+              access_type: "view",
+              user_agent: navigator.userAgent,
+            });
+          }
+        } catch (error) {
+          console.error("Failed to log image view:", error);
+        }
+      };
+      logView();
+    }
+  }, [open]);
 
   // Modal images are never blurred - only the overlay changes
   const getBlurClass = () => {
