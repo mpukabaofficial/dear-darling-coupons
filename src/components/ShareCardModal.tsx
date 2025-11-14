@@ -1,8 +1,5 @@
 import { useState } from "react";
-import {
-  Dialog,
-  DialogContent,
-} from "@/components/ui/dialog";
+import ResponsiveModal from "@/components/ResponsiveModal";
 import { Button } from "@/components/ui/button";
 import RedemptionCard from "./RedemptionCard";
 import { Heart, Download, Share2, Copy, Sparkles, Loader2 } from "lucide-react";
@@ -81,29 +78,33 @@ const ShareCardModal = ({
   const supportsWebShare = canUseWebShare();
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg rounded-3xl p-0 overflow-hidden border-0 shadow-soft">
-        {/* Header */}
-        <div className="bg-gradient-to-br from-peach via-soft-pink to-lavender p-6 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16" />
-          <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full -ml-12 -mb-12" />
+    <ResponsiveModal
+      open={open}
+      onOpenChange={onOpenChange}
+      className="max-w-lg rounded-3xl p-0 overflow-hidden border-0 shadow-soft"
+      showHeader={false}
+    >
+      {/* Header */}
+      <div className="bg-gradient-to-br from-peach via-soft-pink to-lavender p-6 relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16" />
+        <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full -ml-12 -mb-12" />
 
-          <div className="relative text-center">
-            <div className="flex items-center justify-center gap-2 mb-3">
-              <Sparkles className="w-5 h-5 text-primary animate-pulse-subtle" />
-              <Heart className="w-6 h-6 text-primary fill-primary animate-pulse-subtle" />
-              <Sparkles className="w-5 h-5 text-primary animate-pulse-subtle" />
-            </div>
-
-            <h2 className="text-2xl font-bold text-foreground mb-2">
-              A Moment to Share
-            </h2>
-
-            <p className="text-sm text-muted-foreground">
-              Send this memory card to your partner
-            </p>
+        <div className="relative text-center">
+          <div className="flex items-center justify-center gap-2 mb-3">
+            <Sparkles className="w-5 h-5 text-primary animate-pulse-subtle" />
+            <Heart className="w-6 h-6 text-primary fill-primary animate-pulse-subtle" />
+            <Sparkles className="w-5 h-5 text-primary animate-pulse-subtle" />
           </div>
+
+          <h2 className="text-2xl font-bold text-foreground mb-2">
+            A Moment to Share
+          </h2>
+
+          <p className="text-sm text-muted-foreground">
+            Send this memory card to your partner
+          </p>
         </div>
+      </div>
 
         {/* Card Preview */}
         <div className="p-6 bg-gradient-to-br from-muted/30 to-muted/10">
@@ -207,8 +208,7 @@ const ShareCardModal = ({
             This card is just between you two — no branding, just your moment 💕
           </p>
         </div>
-      </DialogContent>
-    </Dialog>
+    </ResponsiveModal>
   );
 };
 

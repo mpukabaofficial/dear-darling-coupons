@@ -1,14 +1,7 @@
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import ResponsiveModal from "@/components/ResponsiveModal";
 import { Textarea } from "@/components/ui/textarea";
 import { Heart, Sparkles, Star } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -277,96 +270,90 @@ const CouponCard = ({ coupon, onRedeemed }: CouponCardProps) => {
       </Card>
 
       {/* Confirmation Dialog */}
-      <Dialog open={showConfirm} onOpenChange={setShowConfirm}>
-        <DialogContent className="rounded-3xl">
-          <DialogHeader>
-            <DialogTitle>Redeem this coupon?</DialogTitle>
-            <DialogDescription>
-              Remember, you can only redeem one coupon per day!
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4 py-4">
-            {!coupon.is_surprise && (
-              <div className="space-y-2">
-                <h4 className="font-semibold">{coupon.title}</h4>
-                {coupon.description && (
-                  <p className="text-sm text-muted-foreground">{coupon.description}</p>
-                )}
-              </div>
-            )}
-
+      <ResponsiveModal
+        open={showConfirm}
+        onOpenChange={setShowConfirm}
+        title="Redeem this coupon?"
+        description="Remember, you can only redeem one coupon per day!"
+        className="rounded-3xl"
+      >
+        <div className="space-y-4 py-4">
+          {!coupon.is_surprise && (
             <div className="space-y-2">
-              <label className="text-sm font-medium">
-                Add a reflection or memory (optional)
-              </label>
-              <Textarea
-                placeholder="Share your thoughts about this moment..."
-                value={reflection}
-                onChange={(e) => setReflection(e.target.value)}
-                className="rounded-2xl resize-none"
-                rows={3}
-              />
+              <h4 className="font-semibold">{coupon.title}</h4>
+              {coupon.description && (
+                <p className="text-sm text-muted-foreground">{coupon.description}</p>
+              )}
             </div>
-          </div>
+          )}
 
-          <DialogFooter className="gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setShowConfirm(false)}
-              disabled={redeeming}
-              className="rounded-full"
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleConfirmRedeem}
-              disabled={redeeming}
-              className="rounded-full"
-            >
-              {redeeming ? "Redeeming..." : "Redeem Now"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">
+              Add a reflection or memory (optional)
+            </label>
+            <Textarea
+              placeholder="Share your thoughts about this moment..."
+              value={reflection}
+              onChange={(e) => setReflection(e.target.value)}
+              className="rounded-2xl resize-none"
+              rows={3}
+            />
+          </div>
+        </div>
+
+        <div className="flex gap-2 justify-end mt-4">
+          <Button
+            variant="outline"
+            onClick={() => setShowConfirm(false)}
+            disabled={redeeming}
+            className="rounded-full"
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleConfirmRedeem}
+            disabled={redeeming}
+            className="rounded-full"
+          >
+            {redeeming ? "Redeeming..." : "Redeem Now"}
+          </Button>
+        </div>
+      </ResponsiveModal>
 
       {/* Surprise Reveal Dialog */}
-      <Dialog open={showReveal} onOpenChange={handleRevealClose}>
-        <DialogContent className="rounded-3xl max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-center text-2xl">
-              Surprise! 🎉
-            </DialogTitle>
-          </DialogHeader>
+      <ResponsiveModal
+        open={showReveal}
+        onOpenChange={handleRevealClose}
+        title="Surprise! 🎉"
+        className="rounded-3xl max-w-md"
+      >
+        <div className="space-y-4 py-6 text-center">
+          {coupon.image_url && (
+            <ProtectedImage
+              src={coupon.image_url}
+              alt={coupon.title}
+              className="w-full rounded-2xl"
+              showWatermark={true}
+            />
+          )}
+          <h3 className="text-2xl font-bold text-primary">{coupon.title}</h3>
+          {coupon.description && (
+            <p className="text-lg">{coupon.description}</p>
+          )}
+          <p className="text-sm text-muted-foreground">
+            Enjoy your special surprise from your partner! 💕
+          </p>
+        </div>
 
-          <div className="space-y-4 py-6 text-center">
-            {coupon.image_url && (
-              <ProtectedImage
-                src={coupon.image_url}
-                alt={coupon.title}
-                className="w-full rounded-2xl"
-                showWatermark={true}
-              />
-            )}
-            <h3 className="text-2xl font-bold text-primary">{coupon.title}</h3>
-            {coupon.description && (
-              <p className="text-lg">{coupon.description}</p>
-            )}
-            <p className="text-sm text-muted-foreground">
-              Enjoy your special surprise from your partner! 💕
-            </p>
-          </div>
-
-          <DialogFooter>
-            <Button
-              onClick={handleRevealClose}
-              className="w-full rounded-full"
-            >
-              Close
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        <div className="mt-4">
+          <Button
+            onClick={handleRevealClose}
+            className="w-full rounded-full"
+          >
+            Close
+          </Button>
+        </div>
+      </ResponsiveModal>
 
       {/* Image Modal */}
       {coupon.image_url && (
