@@ -23,12 +23,14 @@ import { useMoodBackground } from "@/hooks/useMoodBackground";
 import CelebrationModal from "@/components/CelebrationModal";
 import LoveQuote from "@/components/LoveQuote";
 import MoodSelector from "@/components/MoodSelector";
+import UserAvatar from "@/components/UserAvatar";
 
 interface Profile {
   id: string;
   email: string;
   partner_id: string | null;
   relationship_start_date: string | null;
+  avatar_url: string | null;
 }
 
 interface Coupon {
@@ -587,9 +589,7 @@ const Home = () => {
       <header className="sticky top-0 bg-background/80 backdrop-blur-lg border-b border-border z-10">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-primary to-accent rounded-full flex items-center justify-center">
-              <Heart className="w-5 h-5 text-white" fill="currentColor" />
-            </div>
+            <UserAvatar avatarUrl={profile?.avatar_url} size="md" />
             <div className="flex items-center gap-2">
               <h1 className="text-xl font-bold hidden sm:block">Love Coupons</h1>
               {profile?.partner_id && (
