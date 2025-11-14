@@ -7,6 +7,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Eye, EyeOff } from "lucide-react";
+import ProtectedImage from "./ProtectedImage";
 
 interface ImageModalProps {
   open: boolean;
@@ -73,10 +74,11 @@ const ImageModal = ({
           onMouseLeave={() => setIsHovering(false)}
           onClick={handleClick}
         >
-          <img
+          <ProtectedImage
             src={imageUrl}
             alt={title}
             className="w-auto h-auto max-w-[90vw] max-h-[90vh] object-contain block"
+            showWatermark={true}
           />
           {getBlurMessage()}
 
