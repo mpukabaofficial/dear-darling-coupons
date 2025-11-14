@@ -1,7 +1,6 @@
 import * as React from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription } from "@/components/ui/drawer";
-import { Heart } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface ResponsiveModalProps {
@@ -50,13 +49,6 @@ const ResponsiveModal = ({
             className
           )}
         >
-          {/* Creative drag indicator - two hearts */}
-          <div className="mx-auto mt-3 flex items-center gap-2">
-            <Heart className="w-3 h-3 fill-primary/30 text-primary/30" />
-            <div className="h-1.5 w-12 rounded-full bg-gradient-to-r from-primary/40 via-accent/40 to-primary/40" />
-            <Heart className="w-3 h-3 fill-accent/30 text-accent/30" />
-          </div>
-
           {showHeader && title && (
             <DrawerHeader className="text-left">
               <DrawerTitle>{title}</DrawerTitle>
