@@ -15,7 +15,7 @@ import { AnimatedNumber } from "@/components/AnimatedNumber";
 import { useRedemptionReminder } from "@/hooks/useRedemptionReminder";
 import { NotificationBell } from "@/components/NotificationBell";
 import DailyRedemptionBadges from "@/components/DailyRedemptionBadges";
-import confetti from "canvas-confetti";
+import { celebrateRedemption, celebrateWithHearts } from "@/utils/confetti";
 
 interface Profile {
   id: string;
@@ -357,12 +357,7 @@ const Home = () => {
     }
 
     // Show confetti
-    confetti({
-      particleCount: 100,
-      spread: 70,
-      origin: { y: 0.6 },
-      colors: ['#F472B6', '#F9A8D4', '#DDD6FE', '#FDE047'],
-    });
+    celebrateWithHearts();
 
     // For non-surprise coupons with images, show the image modal
     if (!coupon.is_surprise && coupon.image_url) {

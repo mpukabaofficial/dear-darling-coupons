@@ -18,6 +18,10 @@ import ImageModal from "@/components/ImageModal";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { useSoftDelete } from "@/hooks/useSoftDelete";
 import ProtectedImage from "@/components/ProtectedImage";
+import PageTransition from "@/components/PageTransition";
+import StaggerContainer, { StaggerItem } from "@/components/StaggerContainer";
+import ScrollToTop from "@/components/ScrollToTop";
+import { motion } from "framer-motion";
 
 interface Coupon {
   id: string;
@@ -335,7 +339,8 @@ const ManageCoupons = () => {
   );
 
   return (
-    <div className="min-h-screen pb-20">
+    <PageTransition>
+      <div className="min-h-screen pb-20">
       <header className="sticky top-0 bg-background/80 backdrop-blur-lg border-b border-border z-10">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -446,8 +451,9 @@ const ManageCoupons = () => {
                 </Button>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <StaggerContainer className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {visibleCoupons.map((coupon) => (
+                  <StaggerItem key={coupon.id}>
                   <Card
                     key={coupon.id}
                     className="group relative aspect-[3/4] overflow-hidden rounded-3xl shadow-soft hover:shadow-glow transition-all border-2"
@@ -561,8 +567,9 @@ const ManageCoupons = () => {
                       </button>
                     </div>
                   </Card>
+                  </StaggerItem>
                 ))}
-              </div>
+              </StaggerContainer>
             )}
           </TabsContent>
 
@@ -581,8 +588,9 @@ const ManageCoupons = () => {
                 </p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <StaggerContainer className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {redeemedCoupons.filter(r => r.coupons).map((redeemed) => (
+                  <StaggerItem key={redeemed.id}>
                   <Card
                     key={redeemed.id}
                     className="group relative aspect-[3/4] overflow-hidden rounded-3xl shadow-soft hover:shadow-glow transition-all border-2"
@@ -681,8 +689,9 @@ const ManageCoupons = () => {
                       </button>
                     </div>
                   </Card>
+                  </StaggerItem>
                 ))}
-              </div>
+              </StaggerContainer>
             )}
           </TabsContent>
         </Tabs>
@@ -802,7 +811,11 @@ const ManageCoupons = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Scroll to Top Button */}
+      <ScrollToTop />
     </div>
+    </PageTransition>
   );
 };
 
