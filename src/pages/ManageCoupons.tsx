@@ -62,6 +62,9 @@ const ManageCoupons = () => {
   const [showReverseConfirm, setShowReverseConfirm] = useState(false);
   const [redemptionToReverse, setRedemptionToReverse] = useState<RedeemedCoupon | null>(null);
   const [reversing, setReversing] = useState(false);
+  const [showDeleteRedeemedConfirm, setShowDeleteRedeemedConfirm] = useState(false);
+  const [redemptionToDelete, setRedemptionToDelete] = useState<RedeemedCoupon | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
   const { scheduleDelete, undoDelete, isPendingDelete, getExpiredDeletes } = useSoftDelete();
@@ -241,6 +244,61 @@ const ManageCoupons = () => {
     setShowReverseConfirm(false);
     setRedemptionToReverse(null);
     setReversing(false);
+  };
+
+  const handleDeleteRedeemedClick = (redeemed: RedeemedCoupon) => {
+    setRedemptionToDelete(redeemed);
+    setShowDeleteRedeemedConfirm(true);
+  };
+
+  const confirmDeleteRedeemed = async () => {
+    if (!redemptionToDelete) return;
+
+    setDeleting(true);
+
+    // First delete the redemption record
+    const { error: redemptionError } = await supabase
+      .from("redeemed_coupons")
+      .delete()
+      .eq("id", redemptionToDelete.id);
+
+    if (redemptionError) {
+      toast({
+        title: "Error",
+        description: redemptionError.message,
+        variant: "destructive",
+      });
+      setDeleting(false);
+      return;
+    }
+
+    // Then delete the coupon itself
+    const { error: couponError } = await supabase
+      .from("coupons")
+      .delete()
+      .eq("id", redemptionToDelete.coupon_id);
+
+    if (couponError) {
+      toast({
+        title: "Error",
+        description: couponError.message,
+        variant: "destructive",
+      });
+      setDeleting(false);
+      return;
+    }
+
+    toast({
+      title: "Coupon deleted",
+      description: "The redeemed coupon has been permanently deleted.",
+    });
+
+    // Refresh the coupons
+    await checkUserAndFetchCoupons();
+
+    setShowDeleteRedeemedConfirm(false);
+    setRedemptionToDelete(null);
+    setDeleting(false);
   };
 
   if (loading) {
@@ -530,8 +588,8 @@ const ManageCoupons = () => {
                       </p>
                     </div>
 
-                    {/* Reverse Redemption Button */}
-                    <div className="absolute top-4 right-4 pointer-events-auto">
+                    {/* Action Buttons */}
+                    <div className="absolute top-4 right-4 flex gap-2 pointer-events-auto">
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
@@ -541,6 +599,16 @@ const ManageCoupons = () => {
                         title="Reverse redemption"
                       >
                         <RotateCcw className="w-5 h-5 text-white" />
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteRedeemedClick(redeemed);
+                        }}
+                        className="w-10 h-10 bg-rose-500/90 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-rose-600/90 transition-colors"
+                        title="Delete coupon"
+                      >
+                        <Trash2 className="w-5 h-5 text-white" />
                       </button>
                     </div>
                   </Card>
@@ -609,6 +677,58 @@ const ManageCoupons = () => {
               className="rounded-full bg-amber-500 hover:bg-amber-600"
             >
               {reversing ? "Reversing..." : "Reverse Redemption"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Redeemed Coupon Confirmation Dialog */}
+      <Dialog open={showDeleteRedeemedConfirm} onOpenChange={setShowDeleteRedeemedConfirm}>
+        <DialogContent className="rounded-3xl">
+          <DialogHeader>
+            <DialogTitle>Delete Redeemed Coupon?</DialogTitle>
+            <DialogDescription>
+              This will permanently delete this redeemed coupon and cannot be undone. Are you sure?
+            </DialogDescription>
+          </DialogHeader>
+
+          {redemptionToDelete && redemptionToDelete.coupons && (
+            <div className="space-y-2 py-4">
+              <h4 className="font-semibold">{redemptionToDelete.coupons.title}</h4>
+              {redemptionToDelete.coupons.description && (
+                <p className="text-sm text-muted-foreground">{redemptionToDelete.coupons.description}</p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                Redeemed on {new Date(redemptionToDelete.redeemed_at).toLocaleDateString()}
+              </p>
+              {redemptionToDelete.reflection_note && (
+                <div className="mt-3 p-3 bg-muted rounded-lg">
+                  <p className="text-xs font-medium mb-1">Partner's reflection:</p>
+                  <p className="text-sm">{redemptionToDelete.reflection_note}</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowDeleteRedeemedConfirm(false);
+                setRedemptionToDelete(null);
+              }}
+              disabled={deleting}
+              className="rounded-full"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={confirmDeleteRedeemed}
+              disabled={deleting}
+              className="rounded-full bg-rose-500 hover:bg-rose-600"
+              variant="destructive"
+            >
+              {deleting ? "Deleting..." : "Delete Permanently"}
             </Button>
           </DialogFooter>
         </DialogContent>
