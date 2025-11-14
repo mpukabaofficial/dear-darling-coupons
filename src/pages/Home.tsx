@@ -16,6 +16,13 @@ import { useRedemptionReminder } from "@/hooks/useRedemptionReminder";
 import { NotificationBell } from "@/components/NotificationBell";
 import DailyRedemptionBadges from "@/components/DailyRedemptionBadges";
 import { celebrateRedemption, celebrateWithHearts } from "@/utils/confetti";
+import { useMilestones } from "@/hooks/useMilestones";
+import { useAchievements } from "@/hooks/useAchievements";
+import { useAnniversary } from "@/hooks/useAnniversary";
+import { useMoodBackground } from "@/hooks/useMoodBackground";
+import CelebrationModal from "@/components/CelebrationModal";
+import LoveQuote from "@/components/LoveQuote";
+import MoodSelector from "@/components/MoodSelector";
 
 interface Profile {
   id: string;
@@ -56,6 +63,12 @@ const Home = () => {
   const { toast } = useToast();
   const { favorites } = useFavorites();
   const { daysSinceLastRedemption, showReminder, dismissReminder, checkLastRedemption } = useRedemptionReminder(profile?.id);
+
+  // Fun additions hooks
+  const { celebratingMilestone, dismissMilestone, checkMilestones } = useMilestones(profile?.id);
+  const { achievements, newlyUnlocked, dismissNewAchievement, checkAchievements, getUnlockedCount } = useAchievements(profile?.id);
+  const { currentAnniversary, dismissAnniversary, checkAnniversaries } = useAnniversary(profile?.id);
+  const { getBackgroundClass } = useMoodBackground();
 
   // Keyboard shortcuts
   useKeyboardShortcuts({
@@ -116,6 +129,53 @@ const Home = () => {
       });
     }
   }, [unredeemedCount, profile?.partner_id, hasRedeemedToday]);
+
+  // Check anniversaries on mount
+  useEffect(() => {
+    if (profile?.id) {
+      checkAnniversaries();
+    }
+  }, [profile?.id]);
+
+  // Check milestones and achievements when stats change
+  useEffect(() => {
+    if (profile?.id && couponStats.totalCreated > 0) {
+      checkMilestones(couponStats.totalCreated, couponStats.redeemed, 0);
+
+      // Fetch more detailed stats for achievements
+      fetchDetailedStats();
+    }
+  }, [profile?.id, couponStats]);
+
+  const fetchDetailedStats = async () => {
+    if (!profile?.id) return;
+
+    try {
+      const [
+        { data: couponsData },
+        { data: redemptionsData }
+      ] = await Promise.all([
+        supabase.from('coupons').select('is_surprise, image_url').eq('created_by', profile.id),
+        supabase.from('redeemed_coupons').select('redeemed_at, reflection_note').eq('redeemed_by', profile.id)
+      ]);
+
+      const surpriseCoupons = couponsData?.filter(c => c.is_surprise).length || 0;
+      const imageCoupons = couponsData?.filter(c => c.image_url).length || 0;
+      const reflectionNotes = redemptionsData?.filter(r => r.reflection_note).length || 0;
+
+      checkAchievements({
+        couponsCreated: couponStats.totalCreated,
+        couponsRedeemed: couponStats.redeemed,
+        surpriseCoupons,
+        imageCoupons,
+        reflectionNotes,
+        currentStreak: 0,
+        redemptions: redemptionsData?.map(r => ({ redeemed_at: r.redeemed_at })) || [],
+      });
+    } catch (error) {
+      console.error('Error fetching detailed stats:', error);
+    }
+  };
 
   const fetchUnredeemedCount = async () => {
     if (!profile?.partner_id) {
@@ -523,7 +583,7 @@ const Home = () => {
   }
 
   return (
-    <div className="min-h-screen pb-20">
+    <div className={`min-h-screen pb-20 transition-colors duration-500 ${getBackgroundClass()}`}>
       <header className="sticky top-0 bg-background/80 backdrop-blur-lg border-b border-border z-10">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -568,6 +628,9 @@ const Home = () => {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 py-8 space-y-8">
+        {/* Love Quote */}
+        <LoveQuote variant="daily" className="animate-slide-up" />
+
         {/* Partner Link Warning */}
         {!profile?.partner_id && (
           <div className="bg-gradient-to-br from-peach to-soft-pink rounded-3xl p-6 shadow-soft animate-slide-up animate-gradient">
@@ -828,6 +891,33 @@ const Home = () => {
           blurLevel="none"
         />
       )}
+
+      {/* Milestone Celebration Modal */}
+      <CelebrationModal
+        open={!!celebratingMilestone}
+        onOpenChange={(open) => !open && dismissMilestone()}
+        celebration={celebratingMilestone}
+        type="milestone"
+      />
+
+      {/* Achievement Unlocked Modal */}
+      <CelebrationModal
+        open={!!newlyUnlocked}
+        onOpenChange={(open) => !open && dismissNewAchievement()}
+        celebration={newlyUnlocked}
+        type="achievement"
+      />
+
+      {/* Anniversary Celebration Modal */}
+      <CelebrationModal
+        open={!!currentAnniversary}
+        onOpenChange={(open) => !open && dismissAnniversary()}
+        celebration={currentAnniversary}
+        type="anniversary"
+      />
+
+      {/* Mood Selector */}
+      <MoodSelector />
     </div>
   );
 };
