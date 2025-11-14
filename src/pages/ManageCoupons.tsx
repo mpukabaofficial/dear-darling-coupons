@@ -645,20 +645,34 @@ const ManageCoupons = () => {
                     {/* Action Buttons */}
                     <div className="absolute top-4 right-4 flex gap-2 pointer-events-auto">
                       {redeemed.coupons?.image_url && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            toggleBlur(redeemed.coupon_id);
-                          }}
-                          className="w-10 h-10 bg-purple-500/90 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-purple-600/90 transition-colors"
-                          title={unblurredCoupons.has(redeemed.coupon_id) ? "Blur image" : "Unblur image"}
-                        >
-                          {unblurredCoupons.has(redeemed.coupon_id) ? (
-                            <EyeOff className="w-5 h-5 text-white" />
-                          ) : (
-                            <Eye className="w-5 h-5 text-white" />
-                          )}
-                        </button>
+                        <>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleBlur(redeemed.coupon_id);
+                            }}
+                            className="w-10 h-10 bg-purple-500/90 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-purple-600/90 transition-colors"
+                            title={unblurredCoupons.has(redeemed.coupon_id) ? "Blur image" : "Unblur image"}
+                          >
+                            {unblurredCoupons.has(redeemed.coupon_id) ? (
+                              <EyeOff className="w-5 h-5 text-white" />
+                            ) : (
+                              <Eye className="w-5 h-5 text-white" />
+                            )}
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (confirm("Are you sure you want to remove the image from this coupon? The coupon text will remain.")) {
+                                deleteImage(redeemed.coupon_id);
+                              }
+                            }}
+                            className="w-10 h-10 bg-orange-500/90 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-orange-600/90 transition-colors"
+                            title="Remove image"
+                          >
+                            <ImageOff className="w-5 h-5 text-white" />
+                          </button>
+                        </>
                       )}
                       <button
                         onClick={(e) => {
