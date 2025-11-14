@@ -4,14 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import ResponsiveModal from "@/components/ResponsiveModal";
 import { Heart, ArrowLeft, Trash2, Plus, Sparkles, Edit, RotateCcw, ImageOff, Eye, EyeOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import ImageModal from "@/components/ImageModal";
@@ -710,14 +703,13 @@ const ManageCoupons = () => {
       )}
 
       {/* Reverse Redemption Confirmation Dialog */}
-      <Dialog open={showReverseConfirm} onOpenChange={setShowReverseConfirm}>
-        <DialogContent className="rounded-3xl">
-          <DialogHeader>
-            <DialogTitle>Reverse Redemption?</DialogTitle>
-            <DialogDescription>
-              This will make the coupon available for redemption again. Are you sure you want to reverse this redemption?
-            </DialogDescription>
-          </DialogHeader>
+      <ResponsiveModal
+        open={showReverseConfirm}
+        onOpenChange={setShowReverseConfirm}
+        title="Reverse Redemption?"
+        description="This will make the coupon available for redemption again. Are you sure you want to reverse this redemption?"
+        className="rounded-3xl"
+      >
 
           {redemptionToReverse && redemptionToReverse.coupons && (
             <div className="space-y-2 py-4">
@@ -737,7 +729,7 @@ const ManageCoupons = () => {
             </div>
           )}
 
-          <DialogFooter className="gap-2">
+          <div className="flex gap-2 justify-end mt-4">
             <Button
               variant="outline"
               onClick={() => {
@@ -756,19 +748,17 @@ const ManageCoupons = () => {
             >
               {reversing ? "Reversing..." : "Reverse Redemption"}
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </div>
+      </ResponsiveModal>
 
       {/* Delete Redeemed Coupon Confirmation Dialog */}
-      <Dialog open={showDeleteRedeemedConfirm} onOpenChange={setShowDeleteRedeemedConfirm}>
-        <DialogContent className="rounded-3xl">
-          <DialogHeader>
-            <DialogTitle>Delete Redeemed Coupon?</DialogTitle>
-            <DialogDescription>
-              This will permanently delete this redeemed coupon and cannot be undone. Are you sure?
-            </DialogDescription>
-          </DialogHeader>
+      <ResponsiveModal
+        open={showDeleteRedeemedConfirm}
+        onOpenChange={setShowDeleteRedeemedConfirm}
+        title="Delete Redeemed Coupon?"
+        description="This will permanently delete this redeemed coupon and cannot be undone. Are you sure?"
+        className="rounded-3xl"
+      >
 
           {redemptionToDelete && redemptionToDelete.coupons && (
             <div className="space-y-2 py-4">
@@ -788,7 +778,7 @@ const ManageCoupons = () => {
             </div>
           )}
 
-          <DialogFooter className="gap-2">
+          <div className="flex gap-2 justify-end mt-4">
             <Button
               variant="outline"
               onClick={() => {
@@ -808,9 +798,8 @@ const ManageCoupons = () => {
             >
               {deleting ? "Deleting..." : "Delete Permanently"}
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </div>
+      </ResponsiveModal>
 
       {/* Scroll to Top Button */}
       <ScrollToTop />

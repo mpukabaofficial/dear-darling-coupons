@@ -1,11 +1,5 @@
 import { useState, useEffect } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import ResponsiveModal from "@/components/ResponsiveModal";
 import { Eye, EyeOff } from "lucide-react";
 import ProtectedImage from "./ProtectedImage";
 import { supabase } from "@/integrations/supabase/client";
@@ -109,41 +103,44 @@ const ImageModal = ({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[90vw] max-h-[90vh] w-auto h-auto rounded-3xl p-0 overflow-hidden border-0">
-        <div
-          className="relative w-auto h-auto cursor-pointer"
-          onMouseEnter={() => setIsHovering(true)}
-          onMouseLeave={() => setIsHovering(false)}
-          onClick={handleClick}
-        >
-          <ProtectedImage
-            src={imageUrl}
-            alt={title}
-            className="w-auto h-auto max-w-[90vw] max-h-[90vh] object-contain block"
-            showWatermark={true}
-          />
-          {getBlurMessage()}
+    <ResponsiveModal
+      open={open}
+      onOpenChange={onOpenChange}
+      className="max-w-[90vw] max-h-[90vh] w-auto h-auto rounded-3xl p-0 overflow-hidden border-0"
+      showHeader={false}
+    >
+      <div
+        className="relative w-auto h-auto cursor-pointer"
+        onMouseEnter={() => setIsHovering(true)}
+        onMouseLeave={() => setIsHovering(false)}
+        onClick={handleClick}
+      >
+        <ProtectedImage
+          src={imageUrl}
+          alt={title}
+          className="w-auto h-auto max-w-[90vw] max-h-[90vh] object-contain block"
+          showWatermark={true}
+        />
+        {getBlurMessage()}
 
-          {/* Description overlay - appears on hover or when locked */}
-          {description && showDescription && (
-            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/80 to-transparent p-6 pt-12">
-              <h3 className="text-white font-bold text-xl mb-2">{title}</h3>
-              <p className="text-white/90 text-sm leading-relaxed">
-                {description}
-              </p>
-            </div>
-          )}
+        {/* Description overlay - appears on hover or when locked */}
+        {description && showDescription && (
+          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/80 to-transparent p-6 pt-12">
+            <h3 className="text-white font-bold text-xl mb-2">{title}</h3>
+            <p className="text-white/90 text-sm leading-relaxed">
+              {description}
+            </p>
+          </div>
+        )}
 
-          {/* Title only (no description) */}
-          {!description && (
-            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/80 to-transparent p-6 pt-12">
-              <h3 className="text-white font-bold text-xl">{title}</h3>
-            </div>
-          )}
-        </div>
-      </DialogContent>
-    </Dialog>
+        {/* Title only (no description) */}
+        {!description && (
+          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/80 to-transparent p-6 pt-12">
+            <h3 className="text-white font-bold text-xl">{title}</h3>
+          </div>
+        )}
+      </div>
+    </ResponsiveModal>
   );
 };
 

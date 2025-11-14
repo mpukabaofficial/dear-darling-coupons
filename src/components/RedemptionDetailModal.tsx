@@ -1,8 +1,5 @@
 import { useState } from "react";
-import {
-  Dialog,
-  DialogContent,
-} from "@/components/ui/dialog";
+import ResponsiveModal from "@/components/ResponsiveModal";
 import { DailyRedemption } from "@/hooks/useDailyRedemptions";
 import { Heart, Sparkles, Clock, Eye, EyeOff, Image as ImageIcon, FileText } from "lucide-react";
 import { format } from "date-fns";
@@ -37,31 +34,35 @@ const RedemptionDetailModal = ({
   const hasImage = coupon?.image_url;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md rounded-3xl p-0 overflow-hidden border-0 shadow-soft">
-        {/* Toggle Button - Only show if image exists */}
-        {hasImage && (
-          <div className="absolute top-4 right-4 z-50">
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => setViewMode(viewMode === "image" ? "details" : "image")}
-              className="rounded-full shadow-lg bg-white/90 hover:bg-white backdrop-blur-sm"
-            >
-              {viewMode === "image" ? (
-                <>
-                  <FileText className="w-4 h-4 mr-1.5" />
-                  Details
-                </>
-              ) : (
-                <>
-                  <ImageIcon className="w-4 h-4 mr-1.5" />
-                  Image
-                </>
-              )}
-            </Button>
-          </div>
-        )}
+    <ResponsiveModal
+      open={open}
+      onOpenChange={onOpenChange}
+      className="max-w-md rounded-3xl p-0 overflow-hidden border-0 shadow-soft"
+      showHeader={false}
+    >
+      {/* Toggle Button - Only show if image exists */}
+      {hasImage && (
+        <div className="absolute top-4 right-4 z-50">
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => setViewMode(viewMode === "image" ? "details" : "image")}
+            className="rounded-full shadow-lg bg-white/90 hover:bg-white backdrop-blur-sm"
+          >
+            {viewMode === "image" ? (
+              <>
+                <FileText className="w-4 h-4 mr-1.5" />
+                Details
+              </>
+            ) : (
+              <>
+                <ImageIcon className="w-4 h-4 mr-1.5" />
+                Image
+              </>
+            )}
+          </Button>
+        </div>
+      )}
 
         {/* Image-Only View */}
         {viewMode === "image" && hasImage && (
@@ -218,8 +219,7 @@ const RedemptionDetailModal = ({
             <div className="h-2 bg-gradient-to-r from-peach via-soft-pink to-lavender" />
           </>
         )}
-      </DialogContent>
-    </Dialog>
+    </ResponsiveModal>
   );
 };
 

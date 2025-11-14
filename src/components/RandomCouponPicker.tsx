@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import ResponsiveModal from "@/components/ResponsiveModal";
 import { Button } from "@/components/ui/button";
 import { Shuffle, Heart, Sparkles } from "lucide-react";
 
@@ -44,9 +44,13 @@ const RandomCouponPicker = ({ open, onOpenChange, coupons, onRedeem }: RandomCou
   if (!selectedCoupon) return null;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md rounded-3xl p-0 overflow-hidden">
-        <div className="relative">
+    <ResponsiveModal
+      open={open}
+      onOpenChange={onOpenChange}
+      className="max-w-md rounded-3xl p-0 overflow-hidden"
+      showHeader={false}
+    >
+      <div className="relative">
           {/* Coupon Image or Gradient Background */}
           {selectedCoupon.image_url ? (
             <div className="relative h-64">
@@ -115,8 +119,7 @@ const RandomCouponPicker = ({ open, onOpenChange, coupons, onRedeem }: RandomCou
             )}
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+    </ResponsiveModal>
   );
 };
 

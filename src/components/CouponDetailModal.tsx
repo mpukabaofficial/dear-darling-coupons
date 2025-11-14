@@ -1,11 +1,5 @@
 import { useState, useEffect } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import ResponsiveModal from "@/components/ResponsiveModal";
 import { Heart, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -57,76 +51,79 @@ export const CouponDetailModal = ({ open, onOpenChange, couponId }: CouponDetail
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="rounded-3xl max-w-md overflow-hidden p-0">
-        {loading ? (
-          <div className="flex flex-col items-center justify-center p-12">
-            <Heart className="w-12 h-12 text-primary animate-bounce mb-4" fill="currentColor" />
-            <p className="text-muted-foreground">Loading coupon...</p>
-          </div>
-        ) : coupon ? (
-          <>
-            {/* Header with gradient */}
-            <div className="relative bg-gradient-to-br from-peach via-soft-pink to-lavender p-6 text-center">
-              <div className="absolute top-4 left-4">
-                <div className="w-8 h-8 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                  <Heart className="w-4 h-4 text-white" fill="currentColor" />
-                </div>
-              </div>
-              {coupon.is_surprise && (
-                <div className="absolute top-4 right-4">
-                  <div className="flex items-center gap-1 bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full">
-                    <Sparkles className="w-4 h-4 text-white" />
-                    <span className="text-white text-xs font-medium">Surprise</span>
-                  </div>
-                </div>
-              )}
-              <DialogHeader className="space-y-4 pt-6">
-                <DialogTitle className="text-2xl font-bold text-white">
-                  {coupon.title}
-                </DialogTitle>
-              </DialogHeader>
-            </div>
-
-            {/* Image if exists */}
-            {coupon.image_url && (
-              <div className="w-full">
-                <img
-                  src={coupon.image_url}
-                  alt={coupon.title}
-                  className="w-full max-h-[300px] object-cover"
-                />
-              </div>
-            )}
-
-            {/* Description */}
-            {coupon.description && (
-              <div className="p-6 space-y-2">
-                <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-                  Description
-                </h4>
-                <DialogDescription className="text-base text-foreground leading-relaxed">
-                  {coupon.description}
-                </DialogDescription>
-              </div>
-            )}
-
-            {/* Footer decoration */}
-            <div className="px-6 pb-6 pt-2">
-              <div className="flex justify-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-primary/30"></div>
-                <div className="w-2 h-2 rounded-full bg-primary/50"></div>
-                <div className="w-2 h-2 rounded-full bg-primary/30"></div>
+    <ResponsiveModal
+      open={open}
+      onOpenChange={onOpenChange}
+      className="rounded-3xl max-w-md overflow-hidden p-0"
+      showHeader={false}
+    >
+      {loading ? (
+        <div className="flex flex-col items-center justify-center p-12">
+          <Heart className="w-12 h-12 text-primary animate-bounce mb-4" fill="currentColor" />
+          <p className="text-muted-foreground">Loading coupon...</p>
+        </div>
+      ) : coupon ? (
+        <>
+          {/* Header with gradient */}
+          <div className="relative bg-gradient-to-br from-peach via-soft-pink to-lavender p-6 text-center">
+            <div className="absolute top-4 left-4">
+              <div className="w-8 h-8 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                <Heart className="w-4 h-4 text-white" fill="currentColor" />
               </div>
             </div>
-          </>
-        ) : (
-          <div className="flex flex-col items-center justify-center p-12">
-            <Heart className="w-12 h-12 text-muted-foreground mb-4" />
-            <p className="text-muted-foreground">Coupon not found</p>
+            {coupon.is_surprise && (
+              <div className="absolute top-4 right-4">
+                <div className="flex items-center gap-1 bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full">
+                  <Sparkles className="w-4 h-4 text-white" />
+                  <span className="text-white text-xs font-medium">Surprise</span>
+                </div>
+              </div>
+            )}
+            <div className="space-y-4 pt-6">
+              <h2 className="text-2xl font-bold text-white">
+                {coupon.title}
+              </h2>
+            </div>
           </div>
-        )}
-      </DialogContent>
-    </Dialog>
+
+          {/* Image if exists */}
+          {coupon.image_url && (
+            <div className="w-full">
+              <img
+                src={coupon.image_url}
+                alt={coupon.title}
+                className="w-full max-h-[300px] object-cover"
+              />
+            </div>
+          )}
+
+          {/* Description */}
+          {coupon.description && (
+            <div className="p-6 space-y-2">
+              <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                Description
+              </h4>
+              <p className="text-base text-foreground leading-relaxed">
+                {coupon.description}
+              </p>
+            </div>
+          )}
+
+          {/* Footer decoration */}
+          <div className="px-6 pb-6 pt-2">
+            <div className="flex justify-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-primary/30"></div>
+              <div className="w-2 h-2 rounded-full bg-primary/50"></div>
+              <div className="w-2 h-2 rounded-full bg-primary/30"></div>
+            </div>
+          </div>
+        </>
+      ) : (
+        <div className="flex flex-col items-center justify-center p-12">
+          <Heart className="w-12 h-12 text-muted-foreground mb-4" />
+          <p className="text-muted-foreground">Coupon not found</p>
+        </div>
+      )}
+    </ResponsiveModal>
   );
 };
