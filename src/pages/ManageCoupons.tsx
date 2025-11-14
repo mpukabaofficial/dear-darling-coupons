@@ -12,7 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Heart, ArrowLeft, Trash2, Plus, Sparkles, Edit, RotateCcw, ImageOff } from "lucide-react";
+import { Heart, ArrowLeft, Trash2, Plus, Sparkles, Edit, RotateCcw, ImageOff, Eye, EyeOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import ImageModal from "@/components/ImageModal";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
@@ -65,6 +65,7 @@ const ManageCoupons = () => {
   const [showDeleteRedeemedConfirm, setShowDeleteRedeemedConfirm] = useState(false);
   const [redemptionToDelete, setRedemptionToDelete] = useState<RedeemedCoupon | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [unblurredCoupons, setUnblurredCoupons] = useState<Set<string>>(new Set());
   const navigate = useNavigate();
   const { toast } = useToast();
   const { scheduleDelete, undoDelete, isPendingDelete, getExpiredDeletes } = useSoftDelete();
@@ -301,6 +302,18 @@ const ManageCoupons = () => {
     setDeleting(false);
   };
 
+  const toggleBlur = (couponId: string) => {
+    setUnblurredCoupons((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(couponId)) {
+        newSet.delete(couponId);
+      } else {
+        newSet.add(couponId);
+      }
+      return newSet;
+    });
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -440,7 +453,7 @@ const ManageCoupons = () => {
                     className="group relative aspect-[3/4] overflow-hidden rounded-3xl shadow-soft hover:shadow-glow transition-all border-2"
                   >
                     <div
-                      className="w-full h-full cursor-pointer"
+                      className="w-full h-full cursor-pointer relative"
                       onClick={() => {
                         if (coupon.image_url) {
                           setSelectedImage({
@@ -452,12 +465,24 @@ const ManageCoupons = () => {
                       }}
                     >
                       {coupon.image_url ? (
-                        <ProtectedImage
-                          src={coupon.image_url}
-                          alt={coupon.title}
-                          className="w-full h-full object-cover"
-                          showWatermark={false}
-                        />
+                        <>
+                          <ProtectedImage
+                            src={coupon.image_url}
+                            alt={coupon.title}
+                            className={`w-full h-full object-cover transition-all ${
+                              !unblurredCoupons.has(coupon.id) ? "blur-lg" : ""
+                            }`}
+                            showWatermark={false}
+                          />
+                          {!unblurredCoupons.has(coupon.id) && (
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/20 backdrop-blur-sm pointer-events-none">
+                              <div className="bg-white/90 px-4 py-2 rounded-full flex items-center gap-2">
+                                <EyeOff className="w-4 h-4 text-muted-foreground" />
+                                <span className="text-sm font-medium text-muted-foreground">Blurred for privacy</span>
+                              </div>
+                            </div>
+                          )}
+                        </>
                       ) : (
                         <div className="w-full h-full bg-gradient-to-br from-peach via-soft-pink to-lavender" />
                       )}
@@ -485,18 +510,34 @@ const ManageCoupons = () => {
 
                     <div className="absolute top-4 right-4 flex gap-2 pointer-events-auto">
                       {coupon.image_url && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (confirm("Are you sure you want to remove the image from this coupon? The coupon text will remain.")) {
-                              deleteImage(coupon.id);
-                            }
-                          }}
-                          className="w-10 h-10 bg-orange-500/90 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-orange-600/90 transition-colors"
-                          title="Remove image"
-                        >
-                          <ImageOff className="w-5 h-5 text-white" />
-                        </button>
+                        <>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleBlur(coupon.id);
+                            }}
+                            className="w-10 h-10 bg-purple-500/90 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-purple-600/90 transition-colors"
+                            title={unblurredCoupons.has(coupon.id) ? "Blur image" : "Unblur image"}
+                          >
+                            {unblurredCoupons.has(coupon.id) ? (
+                              <EyeOff className="w-5 h-5 text-white" />
+                            ) : (
+                              <Eye className="w-5 h-5 text-white" />
+                            )}
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (confirm("Are you sure you want to remove the image from this coupon? The coupon text will remain.")) {
+                                deleteImage(coupon.id);
+                              }
+                            }}
+                            className="w-10 h-10 bg-orange-500/90 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-orange-600/90 transition-colors"
+                            title="Remove image"
+                          >
+                            <ImageOff className="w-5 h-5 text-white" />
+                          </button>
+                        </>
                       )}
                       <button
                         onClick={(e) => {
@@ -547,7 +588,7 @@ const ManageCoupons = () => {
                     className="group relative aspect-[3/4] overflow-hidden rounded-3xl shadow-soft hover:shadow-glow transition-all border-2"
                   >
                     <div
-                      className="w-full h-full cursor-pointer"
+                      className="w-full h-full cursor-pointer relative"
                       onClick={() => {
                         if (redeemed.coupons?.image_url) {
                           setSelectedImage({
@@ -559,12 +600,24 @@ const ManageCoupons = () => {
                       }}
                     >
                       {redeemed.coupons?.image_url ? (
-                        <ProtectedImage
-                          src={redeemed.coupons.image_url}
-                          alt={redeemed.coupons.title}
-                          className="w-full h-full object-cover"
-                          showWatermark={true}
-                        />
+                        <>
+                          <ProtectedImage
+                            src={redeemed.coupons.image_url}
+                            alt={redeemed.coupons.title}
+                            className={`w-full h-full object-cover transition-all ${
+                              !unblurredCoupons.has(redeemed.coupon_id) ? "blur-lg" : ""
+                            }`}
+                            showWatermark={true}
+                          />
+                          {!unblurredCoupons.has(redeemed.coupon_id) && (
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/20 backdrop-blur-sm pointer-events-none">
+                              <div className="bg-white/90 px-4 py-2 rounded-full flex items-center gap-2">
+                                <EyeOff className="w-4 h-4 text-muted-foreground" />
+                                <span className="text-sm font-medium text-muted-foreground">Blurred for privacy</span>
+                              </div>
+                            </div>
+                          )}
+                        </>
                       ) : (
                         <div className="w-full h-full bg-gradient-to-br from-peach via-soft-pink to-lavender" />
                       )}
@@ -590,6 +643,22 @@ const ManageCoupons = () => {
 
                     {/* Action Buttons */}
                     <div className="absolute top-4 right-4 flex gap-2 pointer-events-auto">
+                      {redeemed.coupons?.image_url && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleBlur(redeemed.coupon_id);
+                          }}
+                          className="w-10 h-10 bg-purple-500/90 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-purple-600/90 transition-colors"
+                          title={unblurredCoupons.has(redeemed.coupon_id) ? "Blur image" : "Unblur image"}
+                        >
+                          {unblurredCoupons.has(redeemed.coupon_id) ? (
+                            <EyeOff className="w-5 h-5 text-white" />
+                          ) : (
+                            <Eye className="w-5 h-5 text-white" />
+                          )}
+                        </button>
+                      )}
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
