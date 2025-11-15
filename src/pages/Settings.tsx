@@ -12,7 +12,6 @@ import { useDarkMode } from "@/hooks/useDarkMode";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import NotificationPreferences from "@/components/NotificationPreferences";
 import AvatarSelector from "@/components/AvatarSelector";
-import UserAvatar from "@/components/UserAvatar";
 import { findAvatarByUrl, getDefaultAvatar } from "@/data/avatars";
 
 interface Profile {
@@ -74,7 +73,14 @@ const Settings = () => {
     }
 
     if (profileData) {
-      setProfile(profileData);
+      // Load avatar_url from localStorage
+      const savedAvatarUrl = localStorage.getItem(`avatar_url_${session.user.id}`);
+      const profileWithAvatar = {
+        ...profileData,
+        avatar_url: savedAvatarUrl || profileData.avatar_url,
+      };
+
+      setProfile(profileWithAvatar);
       setRelationshipStartDate(profileData.relationship_start_date || "");
 
       // Fetch partner profile if linked
@@ -270,20 +276,8 @@ const Settings = () => {
     setAvatarError(null);
 
     try {
-      const { error } = await supabase
-        .from("profiles")
-        .update({ avatar_url: selectedAvatarUrl })
-        .eq("id", profile.id);
-
-      if (error) {
-        setAvatarError("Failed to update avatar. Please try again.");
-        toast({
-          title: "Error",
-          description: "Failed to update avatar",
-          variant: "destructive",
-        });
-        return;
-      }
+      // Save to localStorage
+      localStorage.setItem(`avatar_url_${profile.id}`, selectedAvatarUrl);
 
       // Update local profile state
       setProfile({ ...profile, avatar_url: selectedAvatarUrl });
@@ -326,7 +320,9 @@ const Settings = () => {
       <header className="sticky top-0 bg-background/80 backdrop-blur-lg border-b border-border z-10">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <UserAvatar avatarUrl={profile?.avatar_url} size="md" />
+            <div className="w-10 h-10 bg-gradient-to-br from-primary to-accent rounded-full flex items-center justify-center">
+              <Heart className="w-5 h-5 text-white" fill="currentColor" />
+            </div>
             <h1 className="text-xl font-bold">Settings</h1>
           </div>
           <Button variant="outline" onClick={() => navigate("/home")} className="rounded-full">
