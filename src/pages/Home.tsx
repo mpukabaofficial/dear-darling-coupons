@@ -19,18 +19,13 @@ import { celebrateRedemption, celebrateWithHearts } from "@/utils/confetti";
 import { useMilestones } from "@/hooks/useMilestones";
 import { useAchievements } from "@/hooks/useAchievements";
 import { useAnniversary } from "@/hooks/useAnniversary";
-import { useMoodBackground } from "@/hooks/useMoodBackground";
 import CelebrationModal from "@/components/CelebrationModal";
-import LoveQuote from "@/components/LoveQuote";
-import MoodSelector from "@/components/MoodSelector";
-import UserAvatar from "@/components/UserAvatar";
 
 interface Profile {
   id: string;
   email: string;
   partner_id: string | null;
   relationship_start_date: string | null;
-  avatar_url: string | null;
 }
 
 interface Coupon {
@@ -70,7 +65,6 @@ const Home = () => {
   const { celebratingMilestone, dismissMilestone, checkMilestones } = useMilestones(profile?.id);
   const { achievements, newlyUnlocked, dismissNewAchievement, checkAchievements, getUnlockedCount } = useAchievements(profile?.id);
   const { currentAnniversary, dismissAnniversary, checkAnniversaries } = useAnniversary(profile?.id);
-  const { getBackgroundClass } = useMoodBackground();
 
   // Keyboard shortcuts
   useKeyboardShortcuts({
@@ -585,11 +579,13 @@ const Home = () => {
   }
 
   return (
-    <div className={`min-h-screen pb-20 transition-colors duration-500 ${getBackgroundClass()}`}>
+    <div className="min-h-screen pb-20">
       <header className="sticky top-0 bg-background/80 backdrop-blur-lg border-b border-border z-10">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <UserAvatar avatarUrl={profile?.avatar_url} size="md" />
+            <div className="w-10 h-10 bg-gradient-to-br from-primary to-accent rounded-full flex items-center justify-center">
+              <Heart className="w-5 h-5 text-white" fill="currentColor" />
+            </div>
             <div className="flex items-center gap-2">
               <h1 className="text-xl font-bold hidden sm:block">Love Coupons</h1>
               {profile?.partner_id && (
@@ -628,9 +624,6 @@ const Home = () => {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 py-8 space-y-8">
-        {/* Love Quote */}
-        <LoveQuote variant="daily" className="animate-slide-up" />
-
         {/* Partner Link Warning */}
         {!profile?.partner_id && (
           <div className="bg-gradient-to-br from-peach to-soft-pink rounded-3xl p-6 shadow-soft animate-slide-up animate-gradient">
@@ -916,8 +909,6 @@ const Home = () => {
         type="anniversary"
       />
 
-      {/* Mood Selector */}
-      <MoodSelector />
     </div>
   );
 };
