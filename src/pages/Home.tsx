@@ -20,12 +20,14 @@ import { useMilestones } from "@/hooks/useMilestones";
 import { useAchievements } from "@/hooks/useAchievements";
 import { useAnniversary } from "@/hooks/useAnniversary";
 import CelebrationModal from "@/components/CelebrationModal";
+import UserAvatar from "@/components/UserAvatar";
 
 interface Profile {
   id: string;
   email: string;
   partner_id: string | null;
   relationship_start_date: string | null;
+  avatar_url: string | null;
 }
 
 interface Coupon {
@@ -454,8 +456,15 @@ const Home = () => {
       .single();
 
     if (profileData) {
-      setProfile(profileData);
-      
+      // Load avatar_url from localStorage
+      const savedAvatarUrl = localStorage.getItem(`avatar_url_${session.user.id}`);
+      const profileWithAvatar = {
+        ...profileData,
+        avatar_url: savedAvatarUrl || profileData.avatar_url,
+      };
+
+      setProfile(profileWithAvatar);
+
       if (profileData.relationship_start_date) {
         const start = new Date(profileData.relationship_start_date);
         const today = new Date();
@@ -608,8 +617,13 @@ const Home = () => {
               size="icon"
               onClick={() => navigate("/settings")}
               className="rounded-full"
+              aria-label="Settings"
             >
-              <Settings className="w-5 h-5" />
+              {profile?.avatar_url ? (
+                <UserAvatar avatarUrl={profile.avatar_url} size="sm" showRing={false} />
+              ) : (
+                <Settings className="w-5 h-5" />
+              )}
             </Button>
             <Button
               variant="ghost"
