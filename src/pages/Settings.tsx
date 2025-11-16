@@ -73,14 +73,7 @@ const Settings = () => {
     }
 
     if (profileData) {
-      // Load avatar_url from localStorage
-      const savedAvatarUrl = localStorage.getItem(`avatar_url_${session.user.id}`);
-      const profileWithAvatar = {
-        ...profileData,
-        avatar_url: savedAvatarUrl || profileData.avatar_url,
-      };
-
-      setProfile(profileWithAvatar);
+      setProfile(profileData);
       setRelationshipStartDate(profileData.relationship_start_date || "");
 
       // Fetch partner profile if linked
@@ -276,8 +269,13 @@ const Settings = () => {
     setAvatarError(null);
 
     try {
-      // Save to localStorage
-      localStorage.setItem(`avatar_url_${profile.id}`, selectedAvatarUrl);
+      // Save to database
+      const { error } = await supabase
+        .from("profiles")
+        .update({ avatar_url: selectedAvatarUrl })
+        .eq("id", profile.id);
+
+      if (error) throw error;
 
       // Update local profile state
       setProfile({ ...profile, avatar_url: selectedAvatarUrl });
