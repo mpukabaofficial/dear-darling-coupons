@@ -1,5 +1,5 @@
 
-import { Bell, Check } from "lucide-react";
+import { Bell, Check, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Popover,
@@ -9,8 +9,10 @@ import {
 import { usePartnerNotifications } from "@/hooks/usePartnerNotifications";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import NotificationItem from "./NotificationItem";
+import { useNavigate } from "react-router-dom";
 
 export const NotificationBell = () => {
+  const navigate = useNavigate();
   const { notifications, unreadCount, markAsRead, markAllAsRead, refreshNotifications } = usePartnerNotifications();
 
   return (
@@ -65,14 +67,15 @@ export const NotificationBell = () => {
 
         {/* Footer */}
         {notifications.length > 0 && (
-          <div className="border-t p-2">
+          <div className="border-t p-2 space-y-1">
             <Button
               variant="ghost"
               size="sm"
-              onClick={refreshNotifications}
-              className="w-full text-xs"
+              onClick={() => navigate('/notifications')}
+              className="w-full text-xs justify-between group"
             >
-              Refresh notifications
+              View all notifications
+              <ArrowRight className="w-3 h-3 transition-transform group-hover:translate-x-1" />
             </Button>
           </div>
         )}
