@@ -135,6 +135,13 @@ const Home = () => {
     }
   }, [profile?.id]);
 
+  // Fetch available coupons when profile loads
+  useEffect(() => {
+    if (profile?.id && profile?.partner_id) {
+      fetchAvailableCoupons();
+    }
+  }, [profile?.id, profile?.partner_id]);
+
   // Check milestones and achievements when stats change
   useEffect(() => {
     if (profile?.id && couponStats.totalCreated > 0) {
@@ -224,7 +231,7 @@ const Home = () => {
   };
 
   const fetchAvailableCoupons = async () => {
-    if (!profile?.id || !profile?.partner_id) return;
+    if (!profile?.id || !profile?.partner_id) return [];
 
     const { data, error } = await supabase
       .from("coupons")
@@ -246,10 +253,13 @@ const Home = () => {
         const redeemedIds = new Set(redeemed?.map(r => r.coupon_id) || []);
         const unredeemed = data.filter(c => !redeemedIds.has(c.id));
         setAvailableCoupons(unredeemed);
+        return unredeemed;
       } else {
         setAvailableCoupons([]);
+        return [];
       }
     }
+    return [];
   };
 
   const fetchFavoriteCoupons = async () => {
@@ -436,8 +446,16 @@ const Home = () => {
     checkLastRedemption();
   };
 
-  const handleSurpriseMeClick = () => {
-    fetchAvailableCoupons();
+  const handleSurpriseMeClick = async () => {
+    const coupons = await fetchAvailableCoupons();
+    if (!coupons || coupons.length === 0) {
+      toast({
+        title: "No coupons available",
+        description: "There are no unredeemed coupons to surprise you with!",
+        variant: "destructive",
+      });
+      return;
+    }
     setShowRandomPicker(true);
   };
 
