@@ -702,9 +702,7 @@ const Home = () => {
 
         {/* Daily Redemption Badges */}
         {profile?.partner_id && profile.id && (
-          <div className="bg-gradient-to-br from-muted/30 to-muted/10 rounded-2xl p-3 shadow-sm animate-slide-up">
-            <DailyRedemptionBadges userId={profile.id} refreshTrigger={dailyBadgeRefreshTrigger} />
-          </div>
+          <DailyRedemptionBadges userId={profile.id} refreshTrigger={dailyBadgeRefreshTrigger} />
         )}
 
         {/* Shared Stats Section */}

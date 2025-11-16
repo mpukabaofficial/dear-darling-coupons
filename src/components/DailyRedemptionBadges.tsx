@@ -30,11 +30,13 @@ const DailyRedemptionBadges = ({ userId, refreshTrigger }: DailyRedemptionBadges
 
   if (loading) {
     return (
-      <div className="w-auto mx-auto animate-fade-in">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-full bg-muted animate-pulse" />
-          <div className="w-24 h-4 rounded bg-muted animate-pulse" />
-          <div className="w-12 h-12 rounded-full bg-muted animate-pulse" />
+      <div className="bg-gradient-to-br from-muted/30 to-muted/10 rounded-2xl p-3 shadow-sm animate-slide-up">
+        <div className="w-auto mx-auto animate-fade-in">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-full bg-muted animate-pulse" />
+            <div className="w-24 h-4 rounded bg-muted animate-pulse" />
+            <div className="w-12 h-12 rounded-full bg-muted animate-pulse" />
+          </div>
         </div>
       </div>
     );
@@ -47,8 +49,9 @@ const DailyRedemptionBadges = ({ userId, refreshTrigger }: DailyRedemptionBadges
 
   return (
     <>
-      <div className="w-auto mx-auto animate-fade-in">
-        <div className="flex items-center gap-3">
+      <div className="bg-gradient-to-br from-muted/30 to-muted/10 rounded-2xl p-3 shadow-sm animate-slide-up">
+        <div className="w-auto mx-auto animate-fade-in">
+          <div className="flex items-center gap-3">
           {/* Partner's Badge (Left) */}
           <button
             onClick={() => handleBadgeClick(partnerRedemption, true)}
@@ -90,6 +93,7 @@ const DailyRedemptionBadges = ({ userId, refreshTrigger }: DailyRedemptionBadges
               <Heart className={`w-5 h-5 ${myRedemption ? 'text-primary fill-primary' : 'text-muted-foreground/30'}`} />
             </div>
           </button>
+        </div>
         </div>
       </div>
 
