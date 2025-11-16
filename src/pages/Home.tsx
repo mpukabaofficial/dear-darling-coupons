@@ -456,14 +456,7 @@ const Home = () => {
       .single();
 
     if (profileData) {
-      // Load avatar_url from localStorage
-      const savedAvatarUrl = localStorage.getItem(`avatar_url_${session.user.id}`);
-      const profileWithAvatar = {
-        ...profileData,
-        avatar_url: savedAvatarUrl || profileData.avatar_url,
-      };
-
-      setProfile(profileWithAvatar);
+      setProfile(profileData);
 
       if (profileData.relationship_start_date) {
         const start = new Date(profileData.relationship_start_date);
