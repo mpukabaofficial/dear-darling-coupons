@@ -11,6 +11,7 @@ import History from "./pages/History";
 import Settings from "./pages/Settings";
 import ManageCoupons from "./pages/ManageCoupons";
 import ActivityInsights from "./pages/ActivityInsights";
+import NotificationHistory from "./pages/NotificationHistory";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,6 +31,7 @@ const AppContent = () => {
         <Route path="/settings" element={<Settings />} />
         <Route path="/manage-coupons" element={<ManageCoupons />} />
         <Route path="/activity-insights" element={<ActivityInsights />} />
+        <Route path="/notifications" element={<NotificationHistory />} />
         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
         <Route path="*" element={<NotFound />} />
       </Routes>
