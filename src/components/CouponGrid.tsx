@@ -141,8 +141,10 @@ const CouponGrid = ({ userId, onRedeemed }: CouponGridProps) => {
   const displayedCoupons = showAll ? coupons : coupons.slice(0, 4);
   const hasMoreThanFour = coupons.length > 4;
 
-  // Large screen: 4-column grid with horizontal scrolling
-  if (isLargeScreen && hasMoreThanFour) {
+  // Large screen: always use 4-column grid
+  if (isLargeScreen) {
+    // With horizontal scrolling if more than 4 coupons
+    if (hasMoreThanFour) {
     return (
       <div className="space-y-4">
         <div className="relative">
@@ -185,6 +187,20 @@ const CouponGrid = ({ userId, onRedeemed }: CouponGridProps) => {
             </Button>
           )}
         </div>
+      </div>
+    );
+    }
+    
+    // 4 or fewer coupons: regular 4-column grid
+    return (
+      <div className="grid grid-cols-4 gap-4">
+        {coupons.map((coupon) => (
+          <CouponCard
+            key={coupon.id}
+            coupon={coupon}
+            onRedeemed={handleRedeemed}
+          />
+        ))}
       </div>
     );
   }
