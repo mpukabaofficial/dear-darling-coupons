@@ -29,9 +29,9 @@ const NotificationItem = ({ notification, onMarkAsRead }: NotificationItemProps)
   const handleViewCoupon = () => {
     if (notification.related_coupon_id) {
       if (notification.type === 'new_coupon') {
-        navigate('/');
+        navigate('/home');
       } else if (notification.type === 'coupon_redeemed') {
-        navigate('/manage');
+        navigate('/manage-coupons');
       }
       onMarkAsRead(notification.id);
     }
