@@ -138,52 +138,53 @@ const CouponGrid = ({ userId, onRedeemed }: CouponGridProps) => {
   }
 
   // Determine which coupons to show based on screen size and state
-  const displayedCoupons = isLargeScreen
-    ? coupons // Show all coupons on large screens (with horizontal scroll)
-    : (showAll ? coupons : coupons.slice(0, 4)); // Show 4 or all on small screens
-
+  const displayedCoupons = showAll ? coupons : coupons.slice(0, 4);
   const hasMoreThanFour = coupons.length > 4;
 
-  // Large screen: horizontal scrolling with chevrons
+  // Large screen: 4-column grid with horizontal scrolling
   if (isLargeScreen && hasMoreThanFour) {
     return (
-      <div className="relative">
-        {/* Left chevron */}
-        {canScrollLeft && (
-          <Button
-            variant="outline"
-            size="icon"
-            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 rounded-full shadow-lg bg-background/95 backdrop-blur"
-            onClick={() => scroll('left')}
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-        )}
+      <div className="space-y-4">
+        <div className="relative">
+          {/* Left chevron */}
+          {canScrollLeft && (
+            <Button
+              variant="outline"
+              size="icon"
+              className="absolute left-0 top-1/2 -translate-y-1/2 z-10 rounded-full shadow-lg bg-background/95 backdrop-blur"
+              onClick={() => scroll('left')}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+          )}
 
-        {/* Scrollable container */}
-        <div
-          ref={scrollContainerRef}
-          className="flex gap-4 overflow-x-auto scrollbar-hide scroll-smooth px-8"
-          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-        >
-          {displayedCoupons.map((coupon) => (
-            <div key={coupon.id} className="flex-shrink-0 w-[calc(25%-12px)]">
-              <CouponCard coupon={coupon} onRedeemed={handleRedeemed} />
+          {/* Scrollable grid container */}
+          <div
+            ref={scrollContainerRef}
+            className="overflow-x-auto scrollbar-hide scroll-smooth px-8"
+            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+          >
+            <div className="grid grid-cols-4 gap-4" style={{ width: 'fit-content' }}>
+              {coupons.map((coupon) => (
+                <div key={coupon.id} className="w-64">
+                  <CouponCard coupon={coupon} onRedeemed={handleRedeemed} />
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
+          </div>
 
-        {/* Right chevron */}
-        {canScrollRight && (
-          <Button
-            variant="outline"
-            size="icon"
-            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 rounded-full shadow-lg bg-background/95 backdrop-blur"
-            onClick={() => scroll('right')}
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-        )}
+          {/* Right chevron */}
+          {canScrollRight && (
+            <Button
+              variant="outline"
+              size="icon"
+              className="absolute right-0 top-1/2 -translate-y-1/2 z-10 rounded-full shadow-lg bg-background/95 backdrop-blur"
+              onClick={() => scroll('right')}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
       </div>
     );
   }
