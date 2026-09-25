@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { describeRedemptionError } from "@/lib/redemptionErrors";
+import { getLocalDayRange, parseLocalDate } from "@/lib/dates";
+import { differenceInCalendarDays, intervalToDuration, startOfDay } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Heart, LogOut, Calendar, Smile, Settings, List, Gift, ChevronLeft, ChevronRight, Plus, Shuffle, Star, TrendingUp, X, Clock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -45,7 +47,6 @@ interface Coupon {
 const Home = () => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [daysTogeth, setDaysTogether] = useState(0);
   const [unredeemedCount, setUnredeemedCount] = useState(0);
   const [hasRedeemedToday, setHasRedeemedToday] = useState(false);
   const [currentStatIndex, setCurrentStatIndex] = useState(0);
@@ -193,16 +194,14 @@ const Home = () => {
     }
 
     // Check if user has redeemed today (using local timezone)
-    const now = new Date();
-    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
-    const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+    const { start: startOfTodayUTC, end: endOfTodayUTC } = getLocalDayRange();
 
     const { data: todayRedemptions } = await supabase
       .from("redeemed_coupons")
       .select("id")
       .eq("redeemed_by", profile.id)
-      .gte("redeemed_at", startOfToday.toISOString())
-      .lte("redeemed_at", endOfToday.toISOString())
+      .gte("redeemed_at", startOfTodayUTC)
+      .lte("redeemed_at", endOfTodayUTC)
       .limit(1);
 
     setHasRedeemedToday((todayRedemptions?.length || 0) > 0);
@@ -382,15 +381,15 @@ const Home = () => {
       return;
     }
 
-    // Check daily redemption limit
-    const today = new Date().toISOString().split('T')[0];
+    // Check daily redemption limit (today in the user's local timezone)
+    const { start: startOfTodayUTC, end: endOfTodayUTC } = getLocalDayRange();
 
     const { data, error } = await supabase
       .from("redeemed_coupons")
       .select("*")
       .eq("redeemed_by", user.id)
-      .gte("redeemed_at", `${today}T00:00:00`)
-      .lte("redeemed_at", `${today}T23:59:59`);
+      .gte("redeemed_at", startOfTodayUTC)
+      .lte("redeemed_at", endOfTodayUTC);
 
     if (error) {
       toast({
@@ -471,13 +470,6 @@ const Home = () => {
 
     if (profileData) {
       setProfile(profileData);
-
-      if (profileData.relationship_start_date) {
-        const start = new Date(profileData.relationship_start_date);
-        const today = new Date();
-        const diff = Math.floor((today.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
-        setDaysTogether(diff);
-      }
     }
 
     setLoading(false);
@@ -491,8 +483,8 @@ const Home = () => {
   const getRelationshipStats = () => {
     if (!profile?.relationship_start_date) return null;
 
-    // Parse the date at midnight UTC to avoid timezone issues
-    const startDate = new Date(profile.relationship_start_date + 'T00:00:00Z');
+    // relationship_start_date is a calendar date, so treat it as local midnight
+    const startDate = parseLocalDate(profile.relationship_start_date);
 
     // For live counting of seconds, use current time with full precision
     const totalMsLive = currentTime.getTime() - startDate.getTime();
@@ -501,48 +493,13 @@ const Home = () => {
     const totalHours = Math.floor(totalMinutes / 60);
 
     // For days/weeks/months/years, use midnight to keep values stable throughout the day
-    const todayDate = new Date(currentTime);
-    todayDate.setHours(0, 0, 0, 0);
-    const totalMs = todayDate.getTime() - startDate.getTime();
-    const totalDays = Math.floor(totalMs / (1000 * 60 * 60 * 24));
+    const todayDate = startOfDay(currentTime);
+    const totalDays = differenceInCalendarDays(todayDate, startDate);
     const totalWeeks = Math.floor(totalDays / 7);
 
-    // Calculate years, months, days breakdown using proper date arithmetic
-    let years = 0;
-    let months = 0;
-    let days = 0;
-
-    // Create a working date starting from the start date
-    let workingDate = new Date(startDate);
-
-    // Calculate full years
-    while (true) {
-      const nextYear = new Date(workingDate);
-      nextYear.setUTCFullYear(nextYear.getUTCFullYear() + 1);
-
-      if (nextYear <= todayDate) {
-        years++;
-        workingDate = nextYear;
-      } else {
-        break;
-      }
-    }
-
-    // Calculate remaining full months
-    while (true) {
-      const nextMonth = new Date(workingDate);
-      nextMonth.setUTCMonth(nextMonth.getUTCMonth() + 1);
-
-      if (nextMonth <= todayDate) {
-        months++;
-        workingDate = nextMonth;
-      } else {
-        break;
-      }
-    }
-
-    // Calculate remaining days
-    days = Math.floor((todayDate.getTime() - workingDate.getTime()) / (1000 * 60 * 60 * 24));
+    // Years, months, days breakdown using calendar arithmetic
+    const { years = 0, months = 0, days = 0 } =
+      totalDays > 0 ? intervalToDuration({ start: startDate, end: todayDate }) : {};
 
     // Calculate total months, years, decades, centuries
     const totalMonths = years * 12 + months;

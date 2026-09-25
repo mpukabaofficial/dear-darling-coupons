@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Heart, Sparkles, Star } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { describeRedemptionError } from "@/lib/redemptionErrors";
+import { getLocalDayRange } from "@/lib/dates";
 import { useToast } from "@/hooks/use-toast";
 import { useFavorites } from "@/hooks/useFavorites";
 import confetti from "canvas-confetti";
@@ -78,12 +79,7 @@ const CouponCard = ({ coupon, onRedeemed }: CouponCardProps) => {
     }
 
     // Check daily redemption limit - use local timezone to determine "today"
-    const now = new Date();
-    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
-    const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
-
-    const startOfTodayUTC = startOfToday.toISOString();
-    const endOfTodayUTC = endOfToday.toISOString();
+    const { start: startOfTodayUTC, end: endOfTodayUTC } = getLocalDayRange();
 
     const { data, error } = await supabase
       .from("redeemed_coupons")
