@@ -5,6 +5,7 @@ import ResponsiveModal from "@/components/ResponsiveModal";
 import { Textarea } from "@/components/ui/textarea";
 import { Heart, Sparkles, Star } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { describeRedemptionError } from "@/lib/redemptionErrors";
 import { useToast } from "@/hooks/use-toast";
 import { useFavorites } from "@/hooks/useFavorites";
 import confetti from "canvas-confetti";
@@ -137,8 +138,7 @@ const CouponCard = ({ coupon, onRedeemed }: CouponCardProps) => {
 
     if (error) {
       toast({
-        title: "Error",
-        description: error.message,
+        ...describeRedemptionError(error),
         variant: "destructive",
       });
       setRedeeming(false);
