@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 export interface Notification {
   id: string;
@@ -24,11 +25,15 @@ export const usePartnerNotifications = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const { toast } = useToast();
+  const { user } = useAuth();
+  const userId = user?.id;
 
   useEffect(() => {
+    if (!userId) return;
     fetchNotifications();
-    setupRealtimeSubscription();
-  }, []);
+    return setupRealtimeSubscription(userId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId]);
 
   const fetchNotifications = async () => {
     const { data: { session } } = await supabase.auth.getSession();
@@ -58,15 +63,17 @@ export const usePartnerNotifications = () => {
     }
   };
 
-  const setupRealtimeSubscription = () => {
+  const setupRealtimeSubscription = (userId: string) => {
+    // Unique name per hook instance so multiple mounts don't share a channel
     const channel = supabase
-      .channel("notifications")
+      .channel(`notifications:${userId}:${crypto.randomUUID()}`)
       .on(
         "postgres_changes",
         {
           event: "INSERT",
           schema: "public",
           table: "notifications",
+          filter: `user_id=eq.${userId}`,
         },
         (payload) => {
           const newNotification = {
