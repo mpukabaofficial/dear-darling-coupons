@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -37,6 +38,7 @@ const History = () => {
     blurLevel: "harsh" | "mild" | "none";
   } | null>(null);
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { toast } = useToast();
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -69,13 +71,9 @@ const History = () => {
   }, [searchTerm, coupons]);
 
   const fetchHistory = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      navigate("/auth");
-      return;
-    }
+    if (!user) return;
 
-    setCurrentUserId(session.user.id);
+    setCurrentUserId(user.id);
 
     const { data } = await supabase
       .from("redeemed_coupons")

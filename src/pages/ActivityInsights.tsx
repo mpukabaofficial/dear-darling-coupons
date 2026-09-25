@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ArrowLeft, Heart, TrendingUp, Calendar, Clock, Flame, Trophy, Star } from "lucide-react";
@@ -31,6 +32,7 @@ const ActivityInsights = () => {
   const [loading, setLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState<string>("");
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   useKeyboardShortcuts({
     enableNavigation: true,
@@ -41,13 +43,9 @@ const ActivityInsights = () => {
   }, []);
 
   const fetchData = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      navigate("/auth");
-      return;
-    }
+    if (!user) return;
 
-    setCurrentUserId(session.user.id);
+    setCurrentUserId(user.id);
 
     // Fetch all redemptions for both users
     const { data, error } = await supabase

@@ -1,8 +1,11 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { describeRedemptionError } from "@/lib/redemptionErrors";
+import { getLocalDayRange } from "@/lib/dates";
 import { Button } from "@/components/ui/button";
-import { Heart, LogOut, Calendar, Smile, Settings, List, Gift, ChevronLeft, ChevronRight, Plus, Shuffle, Star, TrendingUp, X, Clock } from "lucide-react";
+import { Heart, LogOut, Smile, Settings, List, Gift, Plus, Shuffle, Star, TrendingUp, X, Clock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import CouponGrid from "@/components/CouponGrid";
 import MoodCheck from "@/components/MoodCheck";
@@ -21,6 +24,7 @@ import { useAchievements } from "@/hooks/useAchievements";
 import { useAnniversary } from "@/hooks/useAnniversary";
 import CelebrationModal from "@/components/CelebrationModal";
 import UserAvatar from "@/components/UserAvatar";
+import RelationshipCounter from "@/components/RelationshipCounter";
 
 interface Profile {
   id: string;
@@ -43,11 +47,8 @@ interface Coupon {
 const Home = () => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [daysTogeth, setDaysTogether] = useState(0);
   const [unredeemedCount, setUnredeemedCount] = useState(0);
   const [hasRedeemedToday, setHasRedeemedToday] = useState(false);
-  const [currentStatIndex, setCurrentStatIndex] = useState(0);
-  const [currentTime, setCurrentTime] = useState(new Date());
   const [showRandomPicker, setShowRandomPicker] = useState(false);
   const [availableCoupons, setAvailableCoupons] = useState<Coupon[]>([]);
   const [favoriteCoupons, setFavoriteCoupons] = useState<Coupon[]>([]);
@@ -59,6 +60,7 @@ const Home = () => {
     totalCreated: 0,
   });
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { toast } = useToast();
   const { favorites } = useFavorites();
   const { daysSinceLastRedemption, showReminder, dismissReminder, checkLastRedemption } = useRedemptionReminder(profile?.id);
@@ -89,15 +91,6 @@ const Home = () => {
       return () => clearInterval(interval);
     }
   }, [profile?.id]);
-
-  // Update current time every second for live counting
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, []);
 
   // Fetch favorite coupons when favorites change
   useEffect(() => {
@@ -190,16 +183,14 @@ const Home = () => {
     }
 
     // Check if user has redeemed today (using local timezone)
-    const now = new Date();
-    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
-    const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+    const { start: startOfTodayUTC, end: endOfTodayUTC } = getLocalDayRange();
 
     const { data: todayRedemptions } = await supabase
       .from("redeemed_coupons")
       .select("id")
       .eq("redeemed_by", profile.id)
-      .gte("redeemed_at", startOfToday.toISOString())
-      .lte("redeemed_at", endOfToday.toISOString())
+      .gte("redeemed_at", startOfTodayUTC)
+      .lte("redeemed_at", endOfTodayUTC)
       .limit(1);
 
     setHasRedeemedToday((todayRedemptions?.length || 0) > 0);
@@ -343,14 +334,13 @@ const Home = () => {
 
   const handleRandomCouponRedeem = async (coupon: Coupon) => {
     // Check if user can redeem (same validation as CouponCard)
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return;
+    if (!user) return;
 
     // Check if user has created at least 4 unredeemed coupons
     const { data: createdCoupons, error: createdError } = await supabase
       .from("coupons")
       .select("id")
-      .eq("created_by", session.user.id);
+      .eq("created_by", user.id);
 
     if (createdError) {
       toast({
@@ -380,15 +370,15 @@ const Home = () => {
       return;
     }
 
-    // Check daily redemption limit
-    const today = new Date().toISOString().split('T')[0];
+    // Check daily redemption limit (today in the user's local timezone)
+    const { start: startOfTodayUTC, end: endOfTodayUTC } = getLocalDayRange();
 
     const { data, error } = await supabase
       .from("redeemed_coupons")
       .select("*")
-      .eq("redeemed_by", session.user.id)
-      .gte("redeemed_at", `${today}T00:00:00`)
-      .lte("redeemed_at", `${today}T23:59:59`);
+      .eq("redeemed_by", user.id)
+      .gte("redeemed_at", startOfTodayUTC)
+      .lte("redeemed_at", endOfTodayUTC);
 
     if (error) {
       toast({
@@ -411,14 +401,13 @@ const Home = () => {
     // Insert into redeemed_coupons table
     const { error: redeemError } = await supabase.from("redeemed_coupons").insert({
       coupon_id: coupon.id,
-      redeemed_by: session.user.id,
+      redeemed_by: user.id,
       reflection_note: null,
     });
 
     if (redeemError) {
       toast({
-        title: "Error",
-        description: redeemError.message,
+        ...describeRedemptionError(redeemError),
         variant: "destructive",
       });
       return;
@@ -460,28 +449,16 @@ const Home = () => {
   };
 
   const checkUser = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    if (!session) {
-      navigate("/auth");
-      return;
-    }
+    if (!user) return;
 
     const { data: profileData } = await supabase
       .from("profiles")
       .select("*")
-      .eq("id", session.user.id)
+      .eq("id", user.id)
       .single();
 
     if (profileData) {
       setProfile(profileData);
-
-      if (profileData.relationship_start_date) {
-        const start = new Date(profileData.relationship_start_date);
-        const today = new Date();
-        const diff = Math.floor((today.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
-        setDaysTogether(diff);
-      }
     }
 
     setLoading(false);
@@ -490,101 +467,6 @@ const Home = () => {
   const handleLogout = async () => {
     await supabase.auth.signOut();
     navigate("/auth");
-  };
-
-  const getRelationshipStats = () => {
-    if (!profile?.relationship_start_date) return null;
-
-    // Parse the date at midnight UTC to avoid timezone issues
-    const startDate = new Date(profile.relationship_start_date + 'T00:00:00Z');
-
-    // For live counting of seconds, use current time with full precision
-    const totalMsLive = currentTime.getTime() - startDate.getTime();
-    const totalSeconds = Math.floor(totalMsLive / 1000);
-    const totalMinutes = Math.floor(totalSeconds / 60);
-    const totalHours = Math.floor(totalMinutes / 60);
-
-    // For days/weeks/months/years, use midnight to keep values stable throughout the day
-    const todayDate = new Date(currentTime);
-    todayDate.setHours(0, 0, 0, 0);
-    const totalMs = todayDate.getTime() - startDate.getTime();
-    const totalDays = Math.floor(totalMs / (1000 * 60 * 60 * 24));
-    const totalWeeks = Math.floor(totalDays / 7);
-
-    // Calculate years, months, days breakdown using proper date arithmetic
-    let years = 0;
-    let months = 0;
-    let days = 0;
-
-    // Create a working date starting from the start date
-    let workingDate = new Date(startDate);
-
-    // Calculate full years
-    while (true) {
-      const nextYear = new Date(workingDate);
-      nextYear.setUTCFullYear(nextYear.getUTCFullYear() + 1);
-
-      if (nextYear <= todayDate) {
-        years++;
-        workingDate = nextYear;
-      } else {
-        break;
-      }
-    }
-
-    // Calculate remaining full months
-    while (true) {
-      const nextMonth = new Date(workingDate);
-      nextMonth.setUTCMonth(nextMonth.getUTCMonth() + 1);
-
-      if (nextMonth <= todayDate) {
-        months++;
-        workingDate = nextMonth;
-      } else {
-        break;
-      }
-    }
-
-    // Calculate remaining days
-    days = Math.floor((todayDate.getTime() - workingDate.getTime()) / (1000 * 60 * 60 * 24));
-
-    // Calculate total months, years, decades, centuries
-    const totalMonths = years * 12 + months;
-    const totalYears = years;
-    const totalDecades = Math.floor(totalYears / 10);
-    const totalCenturies = Math.floor(totalYears / 100);
-
-    // Create calendar string
-    const parts = [];
-    if (years > 0) parts.push(`${years} year${years !== 1 ? 's' : ''}`);
-    if (months > 0) parts.push(`${months} month${months !== 1 ? 's' : ''}`);
-    if (days > 0 || parts.length === 0) parts.push(`${days} day${days !== 1 ? 's' : ''}`);
-    const calendarString = parts.join(', ');
-
-    return [
-      { label: 'Total Seconds', value: totalSeconds.toLocaleString(), sublabel: 'Seconds' },
-      { label: 'Total Minutes', value: totalMinutes.toLocaleString(), sublabel: 'Minutes' },
-      { label: 'Total Hours', value: totalHours.toLocaleString(), sublabel: 'Hours' },
-      { label: 'Total Days', value: totalDays.toLocaleString(), sublabel: 'Days' },
-      { label: 'Total Weeks', value: totalWeeks.toLocaleString(), sublabel: 'Weeks' },
-      { label: 'Total Months', value: totalMonths.toLocaleString(), sublabel: totalMonths === 1 ? 'Month' : 'Months' },
-      { label: 'Total Years', value: totalYears.toLocaleString(), sublabel: totalYears === 1 ? 'Year' : 'Years' },
-      { label: 'Total Decades', value: totalDecades.toLocaleString(), sublabel: totalDecades === 1 ? 'Decade' : 'Decades' },
-      { label: 'Total Centuries', value: totalCenturies.toLocaleString(), sublabel: totalCenturies === 1 ? 'Century' : 'Centuries' },
-      { label: 'Time Together', value: calendarString, sublabel: 'Total' },
-    ];
-  };
-
-  const stats = getRelationshipStats();
-
-  const nextStat = () => {
-    if (!stats) return;
-    setCurrentStatIndex((prev) => (prev + 1) % stats.length);
-  };
-
-  const prevStat = () => {
-    if (!stats) return;
-    setCurrentStatIndex((prev) => (prev - 1 + stats.length) % stats.length);
   };
 
   if (loading) {
@@ -707,47 +589,7 @@ const Home = () => {
 
         {/* Shared Stats Section */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-slide-up">
-          <div className="bg-gradient-to-br from-peach to-soft-pink p-6 rounded-3xl shadow-soft relative hover-lift animate-gradient">
-            <div className="flex items-center gap-3 mb-2">
-              <Calendar className="w-6 h-6 text-primary" />
-              <h3 className="text-lg font-semibold">Days Together</h3>
-            </div>
-            {stats ? (
-              <>
-                <div className="absolute top-6 right-6 flex gap-1">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={prevStat}
-                    className="h-8 w-8 rounded-full hover:bg-primary/20"
-                  >
-                    <ChevronLeft className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={nextStat}
-                    className="h-8 w-8 rounded-full hover:bg-primary/20"
-                  >
-                    <ChevronRight className="w-4 h-4" />
-                  </Button>
-                </div>
-                <p className="text-4xl font-bold text-primary mb-1">
-                  {stats[currentStatIndex].value}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  {stats[currentStatIndex].sublabel}
-                </p>
-              </>
-            ) : (
-              <>
-                <p className="text-4xl font-bold text-primary">—</p>
-                <p className="text-sm text-muted-foreground mt-2">
-                  Set your relationship start date in settings
-                </p>
-              </>
-            )}
-          </div>
+          <RelationshipCounter startDate={profile?.relationship_start_date ?? null} />
 
           <div className="bg-gradient-to-br from-lavender to-accent p-6 rounded-3xl shadow-soft hover-lift animate-gradient">
             <div className="flex items-center gap-3 mb-3">

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -47,6 +48,7 @@ const CreateCoupon = () => {
   const [uploading, setUploading] = useState(false);
   const [errors, setErrors] = useState<{ title?: string; description?: string }>({});
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { toast } = useToast();
 
   // Keyboard shortcuts (disable navigation while typing)
@@ -65,16 +67,12 @@ const CreateCoupon = () => {
   }, [editId, profile]);
 
   const checkAuth = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      navigate("/auth");
-      return;
-    }
+    if (!user) return;
 
     const { data: profileData } = await supabase
       .from("profiles")
       .select("id, partner_id")
-      .eq("id", session.user.id)
+      .eq("id", user.id)
       .single();
 
     if (profileData) {

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -64,6 +65,7 @@ const ManageCoupons = () => {
   const [deleting, setDeleting] = useState(false);
   const [unblurredCoupons, setUnblurredCoupons] = useState<Set<string>>(new Set());
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { toast } = useToast();
   const { scheduleDelete, undoDelete, isPendingDelete, getExpiredDeletes } = useSoftDelete();
 
@@ -96,18 +98,13 @@ const ManageCoupons = () => {
   }, [getExpiredDeletes]);
 
   const checkUserAndFetchCoupons = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-
-    if (!session) {
-      navigate("/auth");
-      return;
-    }
+    if (!user) return;
 
     // Get profile
     const { data: profileData } = await supabase
       .from("profiles")
       .select("id, partner_id")
-      .eq("id", session.user.id)
+      .eq("id", user.id)
       .single();
 
     if (profileData) {
@@ -117,7 +114,7 @@ const ManageCoupons = () => {
       const { data: created } = await supabase
         .from("coupons")
         .select("*")
-        .eq("created_by", session.user.id)
+        .eq("created_by", user.id)
         .order("created_at", { ascending: false });
 
       if (created) {
@@ -142,7 +139,7 @@ const ManageCoupons = () => {
             created_at
           )
         `)
-        .eq("coupons.created_by", session.user.id)
+        .eq("coupons.created_by", user.id)
         .order("redeemed_at", { ascending: false });
 
       if (redeemed) {

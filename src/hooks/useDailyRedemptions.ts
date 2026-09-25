@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { getLocalDayRange } from '@/lib/dates';
 
 export interface DailyRedemption {
   id: string;
@@ -53,14 +54,7 @@ export const useDailyRedemptions = (userId: string | undefined) => {
       if (profileError) throw profileError;
 
       // Get start and end of today in USER'S LOCAL TIMEZONE, then convert to UTC for database
-      const now = new Date();
-      const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
-      const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
-
-      const startOfTodayUTC = startOfToday.toISOString();
-      const endOfTodayUTC = endOfToday.toISOString();
-
-      console.log('Querying redemptions between:', startOfTodayUTC, 'and', endOfTodayUTC);
+      const { start: startOfTodayUTC, end: endOfTodayUTC } = getLocalDayRange();
 
       // Fetch today's redemption for current user (today in local timezone)
       const { data: myRedemptionData, error: myError } = await supabase
@@ -86,7 +80,6 @@ export const useDailyRedemptions = (userId: string | undefined) => {
         .limit(1)
         .maybeSingle();
 
-      console.log('My redemption data:', myRedemptionData, 'Error:', myError);
 
       if (myError && myError.code !== 'PGRST116') throw myError;
 
@@ -116,7 +109,6 @@ export const useDailyRedemptions = (userId: string | undefined) => {
           .limit(1)
           .maybeSingle();
 
-        console.log('Partner redemption data:', partnerData, 'Error:', partnerError);
 
         if (partnerError && partnerError.code !== 'PGRST116') throw partnerError;
         partnerRedemptionData = partnerData;
