@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { describeRedemptionError } from "@/lib/redemptionErrors";
 import { Button } from "@/components/ui/button";
 import { Heart, LogOut, Calendar, Smile, Settings, List, Gift, ChevronLeft, ChevronRight, Plus, Shuffle, Star, TrendingUp, X, Clock } from "lucide-react";
@@ -60,6 +61,7 @@ const Home = () => {
     totalCreated: 0,
   });
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { toast } = useToast();
   const { favorites } = useFavorites();
   const { daysSinceLastRedemption, showReminder, dismissReminder, checkLastRedemption } = useRedemptionReminder(profile?.id);
@@ -344,14 +346,13 @@ const Home = () => {
 
   const handleRandomCouponRedeem = async (coupon: Coupon) => {
     // Check if user can redeem (same validation as CouponCard)
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return;
+    if (!user) return;
 
     // Check if user has created at least 4 unredeemed coupons
     const { data: createdCoupons, error: createdError } = await supabase
       .from("coupons")
       .select("id")
-      .eq("created_by", session.user.id);
+      .eq("created_by", user.id);
 
     if (createdError) {
       toast({
@@ -387,7 +388,7 @@ const Home = () => {
     const { data, error } = await supabase
       .from("redeemed_coupons")
       .select("*")
-      .eq("redeemed_by", session.user.id)
+      .eq("redeemed_by", user.id)
       .gte("redeemed_at", `${today}T00:00:00`)
       .lte("redeemed_at", `${today}T23:59:59`);
 
@@ -412,7 +413,7 @@ const Home = () => {
     // Insert into redeemed_coupons table
     const { error: redeemError } = await supabase.from("redeemed_coupons").insert({
       coupon_id: coupon.id,
-      redeemed_by: session.user.id,
+      redeemed_by: user.id,
       reflection_note: null,
     });
 
@@ -460,17 +461,12 @@ const Home = () => {
   };
 
   const checkUser = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    if (!session) {
-      navigate("/auth");
-      return;
-    }
+    if (!user) return;
 
     const { data: profileData } = await supabase
       .from("profiles")
       .select("*")
-      .eq("id", session.user.id)
+      .eq("id", user.id)
       .single();
 
     if (profileData) {

@@ -4,6 +4,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useDarkMode } from "@/hooks/useDarkMode";
+import { AuthProvider } from "@/contexts/AuthContext";
+import ProtectedRoute from "@/components/ProtectedRoute";
 import Auth from "./pages/Auth";
 import Home from "./pages/Home";
 import CreateCoupon from "./pages/CreateCoupon";
@@ -25,13 +27,13 @@ const AppContent = () => {
       <Routes>
         <Route path="/" element={<Navigate to="/auth" replace />} />
         <Route path="/auth" element={<Auth />} />
-        <Route path="/home" element={<Home />} />
-        <Route path="/create-coupon" element={<CreateCoupon />} />
-        <Route path="/history" element={<History />} />
-        <Route path="/settings" element={<Settings />} />
-        <Route path="/manage-coupons" element={<ManageCoupons />} />
-        <Route path="/activity-insights" element={<ActivityInsights />} />
-        <Route path="/notifications" element={<NotificationHistory />} />
+        <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />
+        <Route path="/create-coupon" element={<ProtectedRoute><CreateCoupon /></ProtectedRoute>} />
+        <Route path="/history" element={<ProtectedRoute><History /></ProtectedRoute>} />
+        <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+        <Route path="/manage-coupons" element={<ProtectedRoute><ManageCoupons /></ProtectedRoute>} />
+        <Route path="/activity-insights" element={<ProtectedRoute><ActivityInsights /></ProtectedRoute>} />
+        <Route path="/notifications" element={<ProtectedRoute><NotificationHistory /></ProtectedRoute>} />
         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
         <Route path="*" element={<NotFound />} />
       </Routes>
@@ -44,7 +46,9 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <AppContent />
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );
